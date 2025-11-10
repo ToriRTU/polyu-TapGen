@@ -1,0 +1,45 @@
+server:
+  port: 8000
+spring:
+  web:
+    resources:
+      static-locations: classpath:/static/
+  application:
+    name: solar-nexus-datasuite
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId}] %-5level [%thread] %logger{50} - %msg%n"
+  level:
+    root: info
+    com.polyu.tapgen: debug
+  config: classpath:logback-spring.xml
+modbus:
+  tcp:
+    timeout: 3000
+    retries: 2
+    reconnect-interval: 5000
+  groups:
+    - name: "group-1"
+      k24:
+        name: "flowmeter_1"
+        host: "192.168.50.101"
+        port: 502
+        slave-id: 1
+      bs600:
+        name: "pressure_1"
+        host: "192.168.50.102"
+        port: 502
+        slave-id: 1
+      sui201:
+        name: "ACPower_1"
+        host: "192.168.1.103"
+        port: 502
+        slave-id: 1
+      SinglePhaseMeter:
+        name: "DCPower_1"
+        host: "192.168.1.104"
+        port: 502
+        slave-id: 1
