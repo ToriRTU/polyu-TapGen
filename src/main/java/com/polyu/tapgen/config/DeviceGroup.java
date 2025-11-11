@@ -8,4 +8,5 @@ public class DeviceGroup {
     private DeviceConfig k24;
     private DeviceConfig bs600;
     private DeviceConfig sui201;
+    private DeviceConfig singlePhaseMeter;
 }

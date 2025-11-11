@@ -51,6 +51,8 @@ public class ModbusTcpConfig {
             masters.put(group.getBs600().getName(), createTcpMaster(group.getBs600(), modbusFactory));
             // SUI201设备
             masters.put(group.getSui201().getName(), createTcpMaster(group.getSui201(), modbusFactory));
+            // 单相电表设备
+            masters.put(group.getSinglePhaseMeter().getName(), createTcpMaster(group.getSinglePhaseMeter(), modbusFactory));
         }
         
         return masters;

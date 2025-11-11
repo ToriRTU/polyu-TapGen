@@ -1,9 +1,8 @@
 package com.polyu.tapgen.service;
 
-import com.polyu.tapgen.manager.ModbusConnectionManager;
 import com.polyu.tapgen.device.K24FlowMeterData;
+import com.polyu.tapgen.manager.ModbusConnectionManager;
 import com.serotonin.modbus4j.ModbusMaster;
-import com.serotonin.modbus4j.code.DataType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -14,12 +13,12 @@ import java.time.LocalDateTime;
 public class K24FlowMeterService {
     
     private final ModbusConnectionManager connectionManager;
-    private final ModbusReaderService readerService;
+    private final ModbusBatchReaderService batchReaderService;
     
     public K24FlowMeterService(ModbusConnectionManager connectionManager, 
-                              ModbusReaderService readerService) {
+                              ModbusBatchReaderService batchReaderService) {
         this.connectionManager = connectionManager;
-        this.readerService = readerService;
+        this.batchReaderService = batchReaderService;
     }
     
     public K24FlowMeterData readData(String deviceName, int slaveId) {
@@ -36,74 +35,76 @@ public class K24FlowMeterService {
         ModbusMaster master = connectionManager.getMaster(deviceName);
         
         try {
-            // 读取计量值 (地址 0x0009, 2个字) - 使用有符号32位整数，字节交换
-            Number measurement = readerService.readRegister(master, slaveId, 0x0009, DataType.FOUR_BYTE_INT_SIGNED_SWAPPED, true);
-            if (measurement != null) {
-                data.setFlowRate(measurement.doubleValue() / 1000.0);
-            }
+            // 一次性读取K24所有需要的寄存器 (从0x0000到0x0019)
+            // 地址范围: 0x0000-0x0019 (共26个寄存器)
+            short[] registers = batchReaderService.readHoldingRegisters(master, slaveId, 0x0000, 26);
             
-            // 读取总累 (地址 0x000D, 2个字) - 使用有符号32位整数，字节交换
-            Number totalAccumulated = readerService.readRegister(master, slaveId, 0x000D, DataType.FOUR_BYTE_INT_SIGNED_SWAPPED, true);
-            if (totalAccumulated != null) {
-                data.setTotalAccumulated(totalAccumulated.doubleValue() / 1000.0);
-            }
+            // 解析数据
+            // 地址 (地址 0x0000) - 无符号16位整数
+            int address = batchReaderService.getUInt16(registers, 0);
+            // 注意：K24协议中地址是只读的，这里只是读取显示
             
-            // 读取班累 (地址 0x000B, 2个字) - 使用有符号32位整数，字节交换
-            Number shiftAccumulated = readerService.readRegister(master, slaveId, 0x000B, DataType.FOUR_BYTE_INT_SIGNED_SWAPPED, true);
-            if (shiftAccumulated != null) {
-                data.setShiftAccumulated(shiftAccumulated.doubleValue() / 1000.0);
-            }
+            // 波特率 (地址 0x0001-0x0002) - 32位无符号整数
+            long baudRate = batchReaderService.getUInt32(registers, 1);
+            // 注意：波特率是配置信息，采集时可能不需要
             
-            // 读取平均流速 (地址 0x000F, 2个字) - 使用有符号32位整数，字节交换
-            Number avgVelocity = readerService.readRegister(master, slaveId, 0x000F, DataType.FOUR_BYTE_INT_SIGNED_SWAPPED, true);
-            if (avgVelocity != null) {
-                data.setAverageFlowVelocity(avgVelocity.doubleValue() / 100.0);
-            }
+            // 产品信息 (地址 0x0003-0x0004) - 32位数据
+            long productInfo = batchReaderService.getUInt32(registers, 3);
             
-            // 读取瞬时流速 (地址 0x0017, 2个字) - 使用有符号32位整数，字节交换
-            Number instantVelocity = readerService.readRegister(master, slaveId, 0x0017, DataType.FOUR_BYTE_INT_SIGNED_SWAPPED, true);
-            if (instantVelocity != null) {
-                data.setInstantaneousVelocity(instantVelocity.doubleValue() / 100.0);
-            }
+            // 硬件信息 (地址 0x0005-0x0006) - 32位数据
+            long hardwareInfo = batchReaderService.getUInt32(registers, 5);
             
-            // 读取单价 (地址 0x0011, 1个字) - 使用无符号16位整数
-            Number price = readerService.readRegister(master, slaveId, 0x0011, DataType.TWO_BYTE_INT_UNSIGNED, true);
-            if (price != null) {
-                data.setPrice(price.doubleValue() / 100.0);
-            }
+            // 软件信息 (地址 0x0007-0x0008) - 32位数据
+            long softwareInfo = batchReaderService.getUInt32(registers, 7);
             
-            // 读取单位 (地址 0x0012, 1个字) - 使用无符号16位整数
-            Number unit = readerService.readRegister(master, slaveId, 0x0012, DataType.TWO_BYTE_INT_UNSIGNED, true);
-            if (unit != null) {
-                data.setUnit(unit.intValue());
-            }
+            // 计量值 (地址 0x0009-0x000A) - 32位有符号整数，低3位为小数
+            int measurement = batchReaderService.getInt32Swapped(registers, 9);
+            data.setFlowRate(measurement / 1000.0);
             
-            // 读取系数 (地址 0x0013, 1个字) - 使用无符号16位整数
-            Number coefficient = readerService.readRegister(master, slaveId, 0x0013, DataType.TWO_BYTE_INT_UNSIGNED, true);
-            if (coefficient != null) {
-                data.setCoefficient(coefficient.doubleValue() / 1000.0);
-            }
+            // 班累 (地址 0x000B-0x000C) - 32位有符号整数，低3位为小数
+            int shiftAccumulated = batchReaderService.getInt32Swapped(registers, 11);
+            data.setShiftAccumulated(shiftAccumulated / 1000.0);
             
-            // 读取校正脉冲 (地址 0x0014, 1个字) - 使用无符号16位整数
-            Number calibrationPulse = readerService.readRegister(master, slaveId, 0x0014, DataType.TWO_BYTE_INT_UNSIGNED, true);
-            if (calibrationPulse != null) {
-                data.setCalibrationPulse(calibrationPulse.intValue());
-            }
+            // 总累 (地址 0x000D-0x000E) - 32位有符号整数，低3位为小数
+            int totalAccumulated = batchReaderService.getInt32Swapped(registers, 13);
+            data.setTotalAccumulated(totalAccumulated / 1000.0);
             
-            // 读取时间戳 (地址 0x0015, 2个字) - 使用无符号32位整数，字节交换
-            Number timestampReg = readerService.readRegister(master, slaveId, 0x0015, DataType.FOUR_BYTE_INT_UNSIGNED_SWAPPED, true);
-            if (timestampReg != null) {
-                data.setTimestampRegister(timestampReg.longValue());
-            }
+            // 平均流速 (地址 0x000F-0x0010) - 32位有符号整数，低2位为小数
+            int avgVelocity = batchReaderService.getInt32Swapped(registers, 15);
+            data.setAverageFlowVelocity(avgVelocity / 100.0);
             
-            // 读取时间单位 (地址 0x0019, 1个字) - 使用无符号16位整数
-            Number timeUnit = readerService.readRegister(master, slaveId, 0x0019, DataType.TWO_BYTE_INT_UNSIGNED, true);
-            if (timeUnit != null) {
-                data.setTimeUnit(timeUnit.intValue());
-            }
+            // 单价 (地址 0x0011) - 16位无符号整数，低2位为小数
+            int price = batchReaderService.getUInt16(registers, 17);
+            data.setPrice(price / 100.0);
+            
+            // 单位 (地址 0x0012) - 16位无符号整数
+            int unit = batchReaderService.getUInt16(registers, 18);
+            data.setUnit(unit);
+            
+            // 系数 (地址 0x0013) - 16位无符号整数，低3位为小数
+            int coefficient = batchReaderService.getUInt16(registers, 19);
+            data.setCoefficient(coefficient / 1000.0);
+            
+            // 校正脉冲 (地址 0x0014) - 16位无符号整数
+            int calibrationPulse = batchReaderService.getUInt16(registers, 20);
+            data.setCalibrationPulse(calibrationPulse);
+            
+            // 时间戳 (地址 0x0015-0x0016) - 32位无符号整数
+            long timestampReg = batchReaderService.getUInt32Swapped(registers, 21);
+            data.setTimestampRegister(timestampReg);
+            
+            // 瞬时流速 (地址 0x0017-0x0018) - 32位有符号整数，低2位为小数
+            int instantVelocity = batchReaderService.getInt32Swapped(registers, 23);
+            data.setInstantaneousVelocity(instantVelocity / 100.0);
+            
+            // 时间单位 (地址 0x0019) - 16位无符号整数
+            int timeUnit = batchReaderService.getUInt16(registers, 25);
+            data.setTimeUnit(timeUnit);
             
             // 更新连接状态为正常
             connectionManager.updateConnectionStatus(deviceName, true);
+            
+            log.debug("K24批量读取成功: {}个寄存器", registers.length);
             
         } catch (Exception e) {
             log.error("读取K24流量计数据失败: {}", deviceName, e);

@@ -1,6 +1,7 @@
 package com.polyu.tapgen.task;
 
 
+import com.google.gson.Gson;
 import com.polyu.tapgen.config.DeviceGroup;
 import com.polyu.tapgen.device.*;
 import com.polyu.tapgen.service.*;
@@ -19,15 +20,18 @@ public class ModbusDataCollector {
     private final K24FlowMeterService k24Service;
     private final BS600DifferentialPressureService bs600Service;
     private final SUI201PowerService sui201Service;
+    private final SinglePhaseMeterService singlePhaseMeterService;
     
     public ModbusDataCollector(Map<String, DeviceGroup> deviceGroups,
                               K24FlowMeterService k24Service,
                               BS600DifferentialPressureService bs600Service,
-                              SUI201PowerService sui201Service) {
+                              SUI201PowerService sui201Service, 
+                               SinglePhaseMeterService singlePhaseMeterService) {
         this.deviceGroups = deviceGroups;
         this.k24Service = k24Service;
         this.bs600Service = bs600Service;
         this.sui201Service = sui201Service;
+        this.singlePhaseMeterService = singlePhaseMeterService;
     }
     
     @Scheduled(fixedRate = 1000) // 1秒执行一次
@@ -56,7 +60,10 @@ public class ModbusDataCollector {
             CompletableFuture<SUI201PowerData> sui201Future = CompletableFuture.supplyAsync(() -> 
                 sui201Service.readData(group.getSui201().getName(), group.getSui201().getSlaveId())
             );
-            
+            CompletableFuture<SinglePhaseMeterData> singlePhaseMeterFuture = CompletableFuture.supplyAsync(() ->
+                    singlePhaseMeterService.readData(group.getSinglePhaseMeter().getName(), group.getSinglePhaseMeter().getSlaveId())
+            );
+
             // 等待所有设备读取完成
             CompletableFuture.allOf(k24Future, bs600Future, sui201Future).join();
             
@@ -64,12 +71,11 @@ public class ModbusDataCollector {
             K24FlowMeterData k24Data = k24Future.get();
             BS600DifferentialPressureData bs600Data = bs600Future.get();
             SUI201PowerData sui201Data = sui201Future.get();
-            
-            log.info("组 {} 数据 - K24: 流量={}L/s, 总累计={}L | BS600: 主变量={} | SUI201: 电压={}V, 电流={}A, 功率={}W", 
-                    groupName,
-                    k24Data.getFlowRate(), k24Data.getTotalAccumulated(),
-                    bs600Data.getFloatMainValue(),
-                    sui201Data.getVoltage(), sui201Data.getCurrent(), sui201Data.getPower());
+            SinglePhaseMeterData singlePhaseMeterData = singlePhaseMeterFuture.get();
+            log.info(new Gson().toJson(k24Data));
+            log.info(new Gson().toJson(bs600Data));
+            log.info(new Gson().toJson(sui201Data));
+            log.info(new Gson().toJson(singlePhaseMeterData));
                     
         } catch (Exception e) {
             log.error("采集组数据失败: {}", groupName, e);

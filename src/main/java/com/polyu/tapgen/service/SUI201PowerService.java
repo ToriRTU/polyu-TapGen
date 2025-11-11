@@ -1,9 +1,8 @@
 package com.polyu.tapgen.service;
 
-import com.polyu.tapgen.manager.ModbusConnectionManager;
 import com.polyu.tapgen.device.SUI201PowerData;
+import com.polyu.tapgen.manager.ModbusConnectionManager;
 import com.serotonin.modbus4j.ModbusMaster;
-import com.serotonin.modbus4j.code.DataType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -14,12 +13,12 @@ import java.time.LocalDateTime;
 public class SUI201PowerService {
     
     private final ModbusConnectionManager connectionManager;
-    private final ModbusReaderService readerService;
+    private final ModbusBatchReaderService batchReaderService;
     
     public SUI201PowerService(ModbusConnectionManager connectionManager,
-                             ModbusReaderService readerService) {
+                             ModbusBatchReaderService batchReaderService) {
         this.connectionManager = connectionManager;
-        this.readerService = readerService;
+        this.batchReaderService = batchReaderService;
     }
     
     public SUI201PowerData readData(String deviceName, int slaveId) {
@@ -36,44 +35,47 @@ public class SUI201PowerService {
         ModbusMaster master = connectionManager.getMaster(deviceName);
         
         try {
-            // 读取电压测量值 (地址 3000/0x0BB8, 2个寄存器) - 使用有符号32位整数，字节交换
-            Number voltage = readerService.readRegister(master, slaveId, 0x0BB8, DataType.FOUR_BYTE_INT_SIGNED_SWAPPED, true);
-            if (voltage != null) {
-                data.setVoltage(voltage.floatValue() / 1000.0f);
-            }
+            // 一次性读取SUI201所有需要的寄存器
+            // 电压(3000-3001), 电流(3002-3003), 功率(3004-3005), 累计电量(3006-3007)
+            // 总共需要8个寄存器
+            short[] registers = batchReaderService.readHoldingRegisters(master, slaveId, 3000, 8);
             
-            // 读取电流测量值 (地址 3002/0x0BBA, 2个寄存器) - 使用有符号32位整数，字节交换
-            Number current = readerService.readRegister(master, slaveId, 0x0BBA, DataType.FOUR_BYTE_INT_SIGNED_SWAPPED, true);
-            if (current != null) {
-                data.setCurrent(current.floatValue() / 1000.0f);
-            }
+            // 解析数据
+            // 电压测量值 (地址 3000-3001) - 有符号32位整数，字节交换
+            int voltage = batchReaderService.getInt32Swapped(registers, 0);
+            data.setVoltage(voltage / 1000.0f);
             
-            // 读取功率 (地址 3004/0x0BBC, 2个寄存器) - 使用有符号32位整数，字节交换
-            Number power = readerService.readRegister(master, slaveId, 0x0BBC, DataType.FOUR_BYTE_INT_SIGNED_SWAPPED, true);
-            if (power != null) {
-                data.setPower(power.floatValue() / 1000.0f);
-            }
+            // 电流测量值 (地址 3002-3003) - 有符号32位整数，字节交换
+            int current = batchReaderService.getInt32Swapped(registers, 2);
+            data.setCurrent(current / 1000.0f);
             
-            // 读取累计电量 (地址 3006/0x0BBE, 2个寄存器) - 使用有符号32位整数，字节交换
-            Number accumulatedEnergy = readerService.readRegister(master, slaveId, 0x0BBE, DataType.FOUR_BYTE_INT_SIGNED_SWAPPED, true);
-            if (accumulatedEnergy != null) {
-                data.setAccumulatedEnergy(accumulatedEnergy.floatValue() / 10.0f);
-            }
+            // 功率 (地址 3004-3005) - 有符号32位整数，字节交换
+            int power = batchReaderService.getInt32Swapped(registers, 4);
+            data.setPower(power / 1000.0f);
             
-            // 读取波特率 (地址 3100/0x0C1C) - 使用无符号16位整数
-            Number baudRate = readerService.readRegister(master, slaveId, 0x0C1C, DataType.TWO_BYTE_INT_UNSIGNED, true);
-            if (baudRate != null) {
-                data.setBaudRate(baudRate.intValue());
-            }
+            // 累计电量 (地址 3006-3007) - 有符号32位整数，字节交换
+            int accumulatedEnergy = batchReaderService.getInt32Swapped(registers, 6);
+            data.setAccumulatedEnergy(accumulatedEnergy / 10.0f);
             
-            // 读取Modbus地址 (地址 3105/0x0C21) - 使用无符号16位整数
-            Number modbusAddress = readerService.readRegister(master, slaveId, 0x0C21, DataType.TWO_BYTE_INT_UNSIGNED, true);
-            if (modbusAddress != null) {
-                data.setModbusAddress(modbusAddress.intValue());
+            // 读取配置寄存器（如果需要的话，可以单独读取）
+            short[] configRegisters = batchReaderService.readHoldingRegisters(master, slaveId, 3100, 2);
+            if (configRegisters.length >= 2) {
+                // 波特率 (地址 3100)
+                int baudRate = batchReaderService.getUInt16(configRegisters, 0);
+                data.setBaudRate(baudRate);
+                
+                // Modbus地址 (地址 3105，需要单独读取)
+                short[] addrRegister = batchReaderService.readHoldingRegisters(master, slaveId, 3105, 1);
+                if (addrRegister.length >= 1) {
+                    int modbusAddress = batchReaderService.getUInt16(addrRegister, 0);
+                    data.setModbusAddress(modbusAddress);
+                }
             }
             
             // 更新连接状态为正常
             connectionManager.updateConnectionStatus(deviceName, true);
+            
+            log.debug("SUI201批量读取成功: 测量值{}个寄存器", registers.length);
             
         } catch (Exception e) {
             log.error("读取SUI-201功率计数据失败: {}", deviceName, e);
