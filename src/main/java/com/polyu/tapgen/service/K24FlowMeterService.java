@@ -39,7 +39,7 @@ public class K24FlowMeterService {
             // 一次性读取K24所有需要的寄存器 (从0x0000到0x0019)
             // 地址范围: 0x0000-0x0019 (共26个寄存器)
             short[] registers = batchReaderService.readHoldingRegisters(master, slaveId, 0x0000, 26);
-            
+            log.info("{}:{}", deviceName, registers);
             // 解析数据
             // 地址 (地址 0x0000) - 无符号16位整数
             int address = batchReaderService.getUInt16(registers, 0);

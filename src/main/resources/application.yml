@@ -16,6 +16,11 @@ logging:
     root: info
     com.polyu.tapgen: debug
   config: classpath:logback-spring.xml
+influx:
+  url: http://127.0.0.1:8086
+  token: rtaL4HSq9C6vvH439pmov9qF_ZJXXPMY7xvzZdcdgPE-BT2HmzNX_ct9zHw0JBOPLs47PA9rwe1uLXJMqPuaWQ==
+  bucket: tapgen
+  org: poylu
 modbus:
   tcp:
     timeout: 3000
@@ -33,13 +38,13 @@ modbus:
         host: "192.168.50.102"
         port: 8899
         slave-id: 1
-      sui201:
+      singlePhaseMeter:
         name: "ACPower_1"
-        host: "192.168.50.104"
+        host: "192.168.1.103"
         port: 8899
         slave-id: 1
-      singlePhaseMeter:
+      sui201:
         name: "DCPower_1"
-        host: "192.168.50.103"
+        host: "192.168.1.104"
         port: 8899
         slave-id: 1

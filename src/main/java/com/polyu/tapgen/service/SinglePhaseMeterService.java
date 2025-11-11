@@ -37,7 +37,7 @@ public class SinglePhaseMeterService {
         try {
             // 一次性读取主要电参数寄存器 (0x00-0x06)
             short[] mainParams = batchReaderService.readHoldingRegisters(master, slaveId, 0x00, 7);
-            
+            log.info("{}: {}", deviceName, mainParams);
             // 解析基本电参数
             // 电压 (地址 0x00) - XXX.XXV，需要除以100
             int voltage = batchReaderService.getUInt16(mainParams, 0);

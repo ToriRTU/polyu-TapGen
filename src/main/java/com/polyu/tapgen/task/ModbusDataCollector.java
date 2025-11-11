@@ -3,12 +3,14 @@ package com.polyu.tapgen.task;
 
 import com.google.gson.Gson;
 import com.polyu.tapgen.config.DeviceGroup;
+import com.polyu.tapgen.db.DeviceService;
 import com.polyu.tapgen.device.*;
 import com.polyu.tapgen.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -21,17 +23,20 @@ public class ModbusDataCollector {
     private final BS600DifferentialPressureService bs600Service;
     private final SUI201PowerService sui201Service;
     private final SinglePhaseMeterService singlePhaseMeterService;
+    private final DeviceService deviceService;
     
     public ModbusDataCollector(Map<String, DeviceGroup> deviceGroups,
                               K24FlowMeterService k24Service,
                               BS600DifferentialPressureService bs600Service,
                               SUI201PowerService sui201Service, 
-                               SinglePhaseMeterService singlePhaseMeterService) {
+                               SinglePhaseMeterService singlePhaseMeterService,
+                               DeviceService deviceService) {
         this.deviceGroups = deviceGroups;
         this.k24Service = k24Service;
         this.bs600Service = bs600Service;
         this.sui201Service = sui201Service;
         this.singlePhaseMeterService = singlePhaseMeterService;
+        this.deviceService = deviceService;
     }
     
     @Scheduled(fixedRate = 1000) // 1秒执行一次
@@ -72,10 +77,11 @@ public class ModbusDataCollector {
             BS600DifferentialPressureData bs600Data = bs600Future.get();
             SUI201PowerData sui201Data = sui201Future.get();
             SinglePhaseMeterData singlePhaseMeterData = singlePhaseMeterFuture.get();
-            log.info(new Gson().toJson(k24Data));
-            log.info(new Gson().toJson(bs600Data));
-            log.info(new Gson().toJson(sui201Data));
-            log.info(new Gson().toJson(singlePhaseMeterData));
+
+            deviceService.saveK24Data(groupName, k24Data);
+            deviceService.saveBS600Data(groupName, bs600Data);
+            deviceService.saveSUI201Data(groupName, sui201Data);
+            deviceService.saveSinglePhaseMeterData(groupName, singlePhaseMeterData);
                     
         } catch (Exception e) {
             log.error("采集组数据失败: {}", groupName, e);
