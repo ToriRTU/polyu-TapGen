@@ -2,6 +2,7 @@ package com.polyu.tapgen.utils;
 
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
+import com.polyu.tapgen.config.Flux;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
