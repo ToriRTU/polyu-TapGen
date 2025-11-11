@@ -1,12 +1,12 @@
 package com.polyu.tapgen.device;
 
 import lombok.Data;
-import java.time.LocalDateTime;
+
 
 @Data
 public class K24FlowMeterData {
     private String deviceName;
-    private LocalDateTime timestamp;
+    private String timestamp;
     private Double flowRate; // 瞬时流量 L/s
     private Double totalAccumulated; // 总累计 L
     private Double shiftAccumulated; // 班累 L

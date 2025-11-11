@@ -2,11 +2,11 @@ package com.polyu.tapgen.service;
 
 import com.polyu.tapgen.device.SinglePhaseMeterData;
 import com.polyu.tapgen.manager.ModbusConnectionManager;
+import com.polyu.tapgen.utils.DateTimeUtil;
 import com.serotonin.modbus4j.ModbusMaster;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -24,7 +24,7 @@ public class SinglePhaseMeterService {
     public SinglePhaseMeterData readData(String deviceName, int slaveId) {
         SinglePhaseMeterData data = new SinglePhaseMeterData();
         data.setDeviceName(deviceName);
-        data.setTimestamp(LocalDateTime.now());
+        data.setTimestamp(DateTimeUtil.now());
         
         // 确保设备连接
         if (!connectionManager.ensureConnected(deviceName)) {

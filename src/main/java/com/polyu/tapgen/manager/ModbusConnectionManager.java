@@ -53,16 +53,10 @@ public class ModbusConnectionManager {
                 master.init();
 
             }
-            if(master.isConnected()){
-                connectionStatus.put(deviceName, true);
-                log.info("设备连接成功: {}", deviceName);
-                return true;
-            }else{
-                connectionStatus.put(deviceName, false);
-                lastReconnectTime.put(deviceName, currentTime);
-                log.warn("设备连接失败: {} ", deviceName);
-                return false;
-            }
+
+            connectionStatus.put(deviceName, true);
+            log.info("设备连接成功: {}", deviceName);
+            return true;
         } catch (Exception e) {
             connectionStatus.put(deviceName, false);
             lastReconnectTime.put(deviceName, currentTime);

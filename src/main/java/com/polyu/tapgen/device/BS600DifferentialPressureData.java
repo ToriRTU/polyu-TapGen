@@ -1,12 +1,12 @@
 package com.polyu.tapgen.device;
 
 import lombok.Data;
-import java.time.LocalDateTime;
+
 
 @Data
 public class BS600DifferentialPressureData {
     private String deviceName;
-    private LocalDateTime timestamp;
+    private String timestamp;
     private Integer intMainValue; // 整型主变量值
     private Integer intBoardTemp; // 整型板卡温度值
     private Float floatMainValue; // 浮点主变量值

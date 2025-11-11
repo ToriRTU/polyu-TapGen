@@ -2,6 +2,7 @@ package com.polyu.tapgen.service;
 
 import com.polyu.tapgen.device.K24FlowMeterData;
 import com.polyu.tapgen.manager.ModbusConnectionManager;
+import com.polyu.tapgen.utils.DateTimeUtil;
 import com.serotonin.modbus4j.ModbusMaster;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ public class K24FlowMeterService {
     public K24FlowMeterData readData(String deviceName, int slaveId) {
         K24FlowMeterData data = new K24FlowMeterData();
         data.setDeviceName(deviceName);
-        data.setTimestamp(LocalDateTime.now());
+        data.setTimestamp(DateTimeUtil.now());
         
         // 确保设备连接
         if (!connectionManager.ensureConnected(deviceName)) {

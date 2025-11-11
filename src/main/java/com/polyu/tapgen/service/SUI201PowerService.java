@@ -2,6 +2,7 @@ package com.polyu.tapgen.service;
 
 import com.polyu.tapgen.device.SUI201PowerData;
 import com.polyu.tapgen.manager.ModbusConnectionManager;
+import com.polyu.tapgen.utils.DateTimeUtil;
 import com.serotonin.modbus4j.ModbusMaster;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ public class SUI201PowerService {
     public SUI201PowerData readData(String deviceName, int slaveId) {
         SUI201PowerData data = new SUI201PowerData();
         data.setDeviceName(deviceName);
-        data.setTimestamp(LocalDateTime.now());
+        data.setTimestamp(DateTimeUtil.now());
         
         // 确保设备连接
         if (!connectionManager.ensureConnected(deviceName)) {

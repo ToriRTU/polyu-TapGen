@@ -1,11 +1,11 @@
 package com.polyu.tapgen.device;
 
 import lombok.Data;
-import java.time.LocalDateTime;
+
 @Data
 public class SinglePhaseMeterData {
     private String deviceName;
-    private LocalDateTime timestamp;
+    private String timestamp;
     
     // 基本电参数
     private Double voltage;           // 电压 V

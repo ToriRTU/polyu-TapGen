@@ -1,12 +1,12 @@
 package com.polyu.tapgen.device;
 
 import lombok.Data;
-import java.time.LocalDateTime;
+
 
 @Data
 public class SUI201PowerData {
     private String deviceName;
-    private LocalDateTime timestamp;
+    private String timestamp;
     private Float voltage; // 电压 V
     private Float current; // 电流 A
     private Float power; // 功率 W
