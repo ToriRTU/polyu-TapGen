@@ -65,39 +65,40 @@ public class K24FlowMeterService {
         // 计量值 (地址 0x0009-0x000A)
         int measurement1 = batchReaderService.getInt32(registers, 9);        // ABCD顺序
         int measurement2 = batchReaderService.getInt32Swapped(registers, 9); // CDAB顺序
-        long measurement3 = batchReaderService.getUInt32(registers, 9);      // 无符号ABCD
-        long measurement4 = batchReaderService.getUInt32Swapped(registers, 9); // 无符号CDAB
 
         log.debug("计量值解析测试:");
         log.debug("  ABCD有符号: {} -> {}", measurement1, measurement1 / 1000.0);
         log.debug("  CDAB有符号: {} -> {}", measurement2, measurement2 / 1000.0);
-        log.debug("  ABCD无符号: {} -> {}", measurement3, measurement3 / 1000.0);
-        log.debug("  CDAB无符号: {} -> {}", measurement4, measurement4 / 1000.0);
 
-        // 暂时使用CDAB有符号（根据之前的协议文档）
-        data.setFlowRate(measurement2 / 1000.0);
+        // K24使用ABCD顺序（标准Modbus字节序）
+        data.setFlowRate(measurement1 / 1000.0);
 
         // 总累 (地址 0x000D-0x000E)
         int total1 = batchReaderService.getInt32(registers, 13);
         int total2 = batchReaderService.getInt32Swapped(registers, 13);
-        data.setTotalAccumulated(total2 / 1000.0);
+        data.setTotalAccumulated(total1 / 1000.0);
 
         // 平均流速 (地址 0x000F-0x0010)
         int avg1 = batchReaderService.getInt32(registers, 15);
         int avg2 = batchReaderService.getInt32Swapped(registers, 15);
-        data.setAverageFlowVelocity(avg2 / 100.0);
+        data.setAverageFlowVelocity(avg1 / 100.0);
 
         // 瞬时流速 (地址 0x0017-0x0018)
         int instant1 = batchReaderService.getInt32(registers, 23);
         int instant2 = batchReaderService.getInt32Swapped(registers, 23);
-        data.setInstantaneousVelocity(instant2 / 100.0);
+        data.setInstantaneousVelocity(instant1 / 100.0);
 
         // 其他单寄存器数据
         data.setPrice(batchReaderService.getUInt16(registers, 17) / 100.0);
         data.setUnit(batchReaderService.getUInt16(registers, 18));
         data.setCoefficient(batchReaderService.getUInt16(registers, 19) / 1000.0);
         data.setCalibrationPulse(batchReaderService.getUInt16(registers, 20));
-        data.setTimestampRegister(batchReaderService.getUInt32Swapped(registers, 21));
+        data.setTimestampRegister(batchReaderService.getUInt32(registers, 21)); // ABCD顺序
         data.setTimeUnit(batchReaderService.getUInt16(registers, 25));
+
+        // 班累 (地址 0x000B-0x000C)
+        int shift1 = batchReaderService.getInt32(registers, 11);
+        int shift2 = batchReaderService.getInt32Swapped(registers, 11);
+        data.setShiftAccumulated(shift1 / 1000.0);
     }
 }

@@ -56,6 +56,9 @@ public class BS600DifferentialPressureService {
     /**
      * 测试不同的解析方式
      */
+    /**
+     * 测试不同的解析方式
+     */
     private void testDifferentParsingMethods(short[] registers, BS600DifferentialPressureData data) {
         // 整型主变量值 (地址 0x0000)
         data.setIntMainValue(batchReaderService.getInt16(registers, 0));
@@ -71,7 +74,7 @@ public class BS600DifferentialPressureService {
         log.debug("  ABCD顺序: {}", floatMain1);
         log.debug("  CDAB顺序: {}", floatMain2);
 
-        // 根据协议文档，BS600使用CDAB顺序
+        // BS600使用CDAB顺序（字节交换）
         data.setFloatMainValue(floatMain2);
 
         // 浮点板卡温度值 (地址 0x0004-0x0005)
