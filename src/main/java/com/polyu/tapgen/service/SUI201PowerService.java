@@ -1,5 +1,6 @@
 package com.polyu.tapgen.service;
 
+import com.google.gson.Gson;
 import com.polyu.tapgen.device.SUI201PowerData;
 import com.polyu.tapgen.manager.ModbusConnectionManager;
 import com.polyu.tapgen.utils.DateTimeUtil;
@@ -63,6 +64,7 @@ public class SUI201PowerService {
             connectionManager.updateConnectionStatus(deviceName, true);
             
             log.debug("SUI201批量读取成功: 测量值{}个寄存器", registers.length);
+            log.debug("{}", new Gson().toJson(data));
         } catch (Exception e) {
             log.error("读取SUI-201功率计数据失败: {}", deviceName, e);
             connectionManager.updateConnectionStatus(deviceName, false);

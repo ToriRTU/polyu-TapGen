@@ -28,7 +28,7 @@ public class ModbusBatchReaderService {
             // 获取响应数据
             byte[] data = response.getData();
             short[] registers = new short[quantity];
-            
+            log.info("readHoldingRegisters: {}",data);
             // 将字节数据转换为short数组
             for (int i = 0; i < quantity; i++) {
                 int index = i * 2;

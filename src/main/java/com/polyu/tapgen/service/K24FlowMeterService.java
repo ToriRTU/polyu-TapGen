@@ -1,5 +1,6 @@
 package com.polyu.tapgen.service;
 
+import com.google.gson.Gson;
 import com.polyu.tapgen.device.K24FlowMeterData;
 import com.polyu.tapgen.manager.ModbusConnectionManager;
 import com.polyu.tapgen.utils.DateTimeUtil;
@@ -106,6 +107,7 @@ public class K24FlowMeterService {
             connectionManager.updateConnectionStatus(deviceName, true);
             
             log.debug("K24批量读取成功: {}个寄存器", registers.length);
+            log.debug("{}", new Gson().toJson(data));
             
         } catch (Exception e) {
             log.error("读取K24流量计数据失败: {}", deviceName, e);

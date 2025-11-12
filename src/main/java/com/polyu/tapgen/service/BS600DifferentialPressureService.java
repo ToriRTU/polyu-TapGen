@@ -1,5 +1,6 @@
 package com.polyu.tapgen.service;
 
+import com.google.gson.Gson;
 import com.polyu.tapgen.device.BS600DifferentialPressureData;
 import com.polyu.tapgen.manager.ModbusConnectionManager;
 import com.polyu.tapgen.utils.DateTimeUtil;
@@ -98,7 +99,7 @@ public class BS600DifferentialPressureService {
             connectionManager.updateConnectionStatus(deviceName, true);
             
             log.debug("BS600批量读取成功: {}个寄存器", registers.length);
-            
+            log.debug("{}", new Gson().toJson(data));
         } catch (Exception e) {
             log.error("读取BS-600差压计数据失败: {}", deviceName, e);
             connectionManager.updateConnectionStatus(deviceName, false);

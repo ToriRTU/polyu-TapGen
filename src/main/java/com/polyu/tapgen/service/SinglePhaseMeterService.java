@@ -1,5 +1,6 @@
 package com.polyu.tapgen.service;
 
+import com.google.gson.Gson;
 import com.polyu.tapgen.device.SinglePhaseMeterData;
 import com.polyu.tapgen.manager.ModbusConnectionManager;
 import com.polyu.tapgen.utils.DateTimeUtil;
@@ -83,7 +84,7 @@ public class SinglePhaseMeterService {
             
             log.debug("单相电表批量读取成功: 主要参数{}个, 电能{}个寄存器", 
                      mainParams.length, energyRegisters.length);
-            
+            log.debug("{}", new Gson().toJson(data));
         } catch (Exception e) {
             log.error("读取单相电表数据失败: {}", deviceName, e);
             connectionManager.updateConnectionStatus(deviceName, false);
