@@ -16,24 +16,32 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @Component
 public class ModbusDataCollector {
-    @Resource
-    private Map<String, DeviceGroup> deviceGroups;
-    @Resource
-    private K24FlowMeterService k24Service;
-    @Resource
-    private BS600DifferentialPressureService bs600Service;
-    @Resource
-    private SUI201PowerService sui201Service;
-    @Resource
-    private SinglePhaseMeterService singlePhaseMeterService;
-    @Resource
-    private DeviceService deviceService;
-    @Resource
-    private ExcelExportService excelExportService;
 
+    private final Map<String, DeviceGroup> deviceGroups;
+    private final K24FlowMeterService k24Service;
+    private final BS600DifferentialPressureService bs600Service;
+    private final SUI201PowerService sui201Service;
+    private final SinglePhaseMeterService singlePhaseMeterService;
+    private final DeviceService deviceService;
+    private final ExcelExportService excelExportService;
 
+    public ModbusDataCollector(Map<String, DeviceGroup> deviceGroups,
+                               K24FlowMeterService k24Service,
+                               BS600DifferentialPressureService bs600Service,
+                               SUI201PowerService sui201Service,
+                               SinglePhaseMeterService singlePhaseMeterService,
+                               DeviceService deviceService,
+                               ExcelExportService excelExportService) {
+        this.deviceGroups = deviceGroups;
+        this.k24Service = k24Service;
+        this.bs600Service = bs600Service;
+        this.sui201Service = sui201Service;
+        this.singlePhaseMeterService = singlePhaseMeterService;
+        this.deviceService = deviceService;
+        this.excelExportService = excelExportService;
+    }
 
-    @Scheduled(fixedRate = 60000) // 1分钟执行一次
+    @Scheduled(fixedRate = 10000) // 1分钟执行一次
     public void collectAllGroupsData() {
         log.info("=== 开始采集所有设备组数据 ===");
 
