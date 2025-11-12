@@ -8,103 +8,94 @@ import com.serotonin.modbus4j.ModbusMaster;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.Calendar;
-
 @Slf4j
 @Service
 public class BS600DifferentialPressureService {
-    
+
     private final ModbusConnectionManager connectionManager;
     private final ModbusBatchReaderService batchReaderService;
-    
+
     public BS600DifferentialPressureService(ModbusConnectionManager connectionManager,
-                                           ModbusBatchReaderService batchReaderService) {
+                                            ModbusBatchReaderService batchReaderService) {
         this.connectionManager = connectionManager;
         this.batchReaderService = batchReaderService;
     }
-    
+
     public BS600DifferentialPressureData readData(String deviceName, int slaveId) {
         BS600DifferentialPressureData data = new BS600DifferentialPressureData();
         data.setDeviceName(deviceName);
         data.setTimestamp(DateTimeUtil.now());
-        
-        // 确保设备连接
+
         if (!connectionManager.ensureConnected(deviceName)) {
             log.warn("设备未连接，跳过读取: {}", deviceName);
             return data;
         }
-        
+
         ModbusMaster master = connectionManager.getMaster(deviceName);
-        
+
         try {
-            // 一次性读取BS600所有需要的寄存器 (从0x0000到0x0010)
-            // 地址范围: 0x0000-0x0010 (共17个寄存器)
+            // 读取BS600所有寄存器 (0x0000-0x0010)
             short[] registers = batchReaderService.readHoldingRegisters(master, slaveId, 0x0000, 17);
-            log.info("{}:{}", deviceName, registers);
-            // 解析数据
-            // 整型主变量值 (地址 0x0000) - 有符号16位整数
-            int intMainValue = batchReaderService.getInt16(registers, 0);
-            data.setIntMainValue(intMainValue);
-            
-            // 整型板卡温度值 (地址 0x0001) - 有符号16位整数
-            int intBoardTemp = batchReaderService.getInt16(registers, 1);
-            data.setIntBoardTemp(intBoardTemp);
-            
-            // 浮点主变量值 (地址 0x0002-0x0003) - 32位浮点数，字节交换
-            float floatMainValue = batchReaderService.getFloatSwapped(registers, 2);
-            data.setFloatMainValue(floatMainValue);
-            
-            // 浮点板卡温度值 (地址 0x0004-0x0005) - 32位浮点数，字节交换
-            float floatBoardTemp = batchReaderService.getFloatSwapped(registers, 4);
-            data.setFloatBoardTemp(floatBoardTemp);
-            
-            // Modbus地址 (地址 0x0006) - 无符号16位整数
-            int modbusAddress = batchReaderService.getUInt16(registers, 6);
-            data.setModbusAddress(modbusAddress);
-            
-            // 波特率 (地址 0x0007) - 无符号16位整数
-            int baudRate = batchReaderService.getUInt16(registers, 7);
-            data.setBaudRate(baudRate);
-            
-            // 校验位 (地址 0x0008) - 无符号16位整数
-            int parity = batchReaderService.getUInt16(registers, 8);
-            data.setParity(parity);
-            
-            // 主变量单位 (地址 0x0009) - 无符号16位整数
-            int mainUnit = batchReaderService.getUInt16(registers, 9);
-            data.setMainUnit(mainUnit);
-            
-            // 副变量单位 (地址 0x000A) - 无符号16位整数
-            int subUnit = batchReaderService.getUInt16(registers, 10);
-            data.setSubUnit(subUnit);
-            
-            // 主变量小数位数 (地址 0x000B) - 无符号16位整数
-            int mainDecimal = batchReaderService.getUInt16(registers, 11);
-            data.setMainDecimal(mainDecimal);
-            
-            // 副变量小数位数 (地址 0x000C) - 无符号16位整数
-            int subDecimal = batchReaderService.getUInt16(registers, 12);
-            data.setSubDecimal(subDecimal);
-            
-            // 主变量偏移值 (地址 0x000D-0x000E) - 32位浮点数，字节交换
-            float mainOffset = batchReaderService.getFloatSwapped(registers, 13);
-            data.setMainOffset(mainOffset);
-            
-            // 主变量增益值 (地址 0x000F-0x0010) - 32位浮点数，字节交换
-            float mainGain = batchReaderService.getFloatSwapped(registers, 15);
-            data.setMainGain(mainGain);
-            
-            // 更新连接状态为正常
-            connectionManager.updateConnectionStatus(deviceName, true);
-            
-            log.debug("BS600批量读取成功: {}个寄存器", registers.length);
+
+            // 调试输出
+            batchReaderService.debugRegisters(registers, deviceName);
+
+            // 测试不同的解析方式
+            testDifferentParsingMethods(registers, data);
             log.debug("{}", new Gson().toJson(data));
+            connectionManager.updateConnectionStatus(deviceName, true);
+
         } catch (Exception e) {
             log.error("读取BS-600差压计数据失败: {}", deviceName, e);
             connectionManager.updateConnectionStatus(deviceName, false);
         }
-        
+
         return data;
+    }
+
+    /**
+     * 测试不同的解析方式
+     */
+    private void testDifferentParsingMethods(short[] registers, BS600DifferentialPressureData data) {
+        // 整型主变量值 (地址 0x0000)
+        data.setIntMainValue(batchReaderService.getInt16(registers, 0));
+
+        // 整型板卡温度值 (地址 0x0001)
+        data.setIntBoardTemp(batchReaderService.getInt16(registers, 1));
+
+        // 浮点主变量值 (地址 0x0002-0x0003)
+        float floatMain1 = batchReaderService.getFloat(registers, 2);        // ABCD顺序
+        float floatMain2 = batchReaderService.getFloatSwapped(registers, 2); // CDAB顺序
+
+        log.debug("BS600浮点主变量值解析测试:");
+        log.debug("  ABCD顺序: {}", floatMain1);
+        log.debug("  CDAB顺序: {}", floatMain2);
+
+        // 根据协议文档，BS600使用CDAB顺序
+        data.setFloatMainValue(floatMain2);
+
+        // 浮点板卡温度值 (地址 0x0004-0x0005)
+        float boardTemp1 = batchReaderService.getFloat(registers, 4);
+        float boardTemp2 = batchReaderService.getFloatSwapped(registers, 4);
+        data.setFloatBoardTemp(boardTemp2);
+
+        // 配置参数
+        data.setModbusAddress(batchReaderService.getUInt16(registers, 6));
+        data.setBaudRate(batchReaderService.getUInt16(registers, 7));
+        data.setParity(batchReaderService.getUInt16(registers, 8));
+        data.setMainUnit(batchReaderService.getUInt16(registers, 9));
+        data.setSubUnit(batchReaderService.getUInt16(registers, 10));
+        data.setMainDecimal(batchReaderService.getUInt16(registers, 11));
+        data.setSubDecimal(batchReaderService.getUInt16(registers, 12));
+
+        // 主变量偏移值 (地址 0x000D-0x000E)
+        float mainOffset1 = batchReaderService.getFloat(registers, 13);
+        float mainOffset2 = batchReaderService.getFloatSwapped(registers, 13);
+        data.setMainOffset(mainOffset2);
+
+        // 主变量增益值 (地址 0x000F-0x0010)
+        float mainGain1 = batchReaderService.getFloat(registers, 15);
+        float mainGain2 = batchReaderService.getFloatSwapped(registers, 15);
+        data.setMainGain(mainGain2);
     }
 }
