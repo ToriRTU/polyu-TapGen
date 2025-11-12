@@ -15,7 +15,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
-@Service
 public class ExcelExportService {
     
     private final Map<String, ExcelWriter> excelWriters = new ConcurrentHashMap<>();

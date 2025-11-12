@@ -1,4 +1,4 @@
-package com.polyu.solarnexus.task;
+package com.polyu.tapgen.task;
 
 import com.polyu.tapgen.config.DeviceGroup;
 import com.polyu.tapgen.db.DeviceService;
@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -30,8 +28,7 @@ public class ModbusDataCollector {
                                BS600DifferentialPressureService bs600Service,
                                SUI201PowerService sui201Service,
                                SinglePhaseMeterService singlePhaseMeterService,
-                               DeviceService deviceService,
-                               ExcelExportService excelExportService) {
+                               DeviceService deviceService, ExcelExportService excelExportService) {
         this.deviceGroups = deviceGroups;
         this.k24Service = k24Service;
         this.bs600Service = bs600Service;
@@ -41,7 +38,7 @@ public class ModbusDataCollector {
         this.excelExportService = excelExportService;
     }
 
-    @Scheduled(fixedRate = 10000) // 1分钟执行一次
+    @Scheduled(fixedRate = 1000) // 1分钟执行一次
     public void collectAllGroupsData() {
         log.info("=== 开始采集所有设备组数据 ===");
 
@@ -87,9 +84,9 @@ public class ModbusDataCollector {
             deviceService.saveBS600Data(groupName, bs600Data);
             deviceService.saveSUI201Data(groupName, sui201Data);
             deviceService.saveSinglePhaseMeterData(groupName, singlePhaseMeterData);
-*/
+        */
             // 写入Excel
-            excelExportService.writeDataToExcel(groupName, k24Data, bs600Data, sui201Data, singlePhaseMeterData);
+           // excelExportService.writeDataToExcel(groupName, k24Data, bs600Data, sui201Data, singlePhaseMeterData);
 
             // 打印日志
             log.info("组 {} 数据采集完成 - K24: 流量={}L/s | BS600: 主变量={} | SUI201: 功率={}W | 单相电表: 电压={}V",
@@ -104,9 +101,4 @@ public class ModbusDataCollector {
         }
     }
 
-    @PreDestroy
-    public void destroy() {
-        log.info("=== 关闭数据采集服务 ===");
-        excelExportService.closeAllWriters();
-    }
 }
