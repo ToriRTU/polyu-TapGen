@@ -3,7 +3,6 @@ package com.polyu.tapgen.task;
 import com.polyu.tapgen.config.Constants;
 import com.polyu.tapgen.config.DeviceGroup;
 import com.polyu.tapgen.db.DeviceService;
-import com.polyu.tapgen.device.*;
 import com.polyu.tapgen.modbus.DeviceValue;
 import com.polyu.tapgen.service.*;
 import lombok.extern.slf4j.Slf4j;

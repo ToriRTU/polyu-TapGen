@@ -46,13 +46,13 @@ public class ModbusTcpConfig {
         
         for (DeviceGroup group : groups) {
             // K24设备
-            masters.put(group.getK24().getName(), createTcpMaster(group.getK24(), modbusFactory));
+            masters.put(group.getFlowmeter().getName(), createTcpMaster(group.getFlowmeter(), modbusFactory));
             // BS600设备
-            masters.put(group.getBs600().getName(), createTcpMaster(group.getBs600(), modbusFactory));
+            masters.put(group.getPressure().getName(), createTcpMaster(group.getPressure(), modbusFactory));
             // SUI201设备
-            masters.put(group.getSui201().getName(), createTcpMaster(group.getSui201(), modbusFactory));
+            masters.put(group.getDcpower().getName(), createTcpMaster(group.getDcpower(), modbusFactory));
             // 单相电表设备
-            masters.put(group.getSinglePhaseMeter().getName(), createTcpMaster(group.getSinglePhaseMeter(), modbusFactory));
+            masters.put(group.getAcpower().getName(), createTcpMaster(group.getAcpower(), modbusFactory));
         }
         
         return masters;
