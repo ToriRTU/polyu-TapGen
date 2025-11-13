@@ -24,7 +24,7 @@ public class ModbusDataCollector {
     @Resource
     private DeviceService deviceService;
     @Resource
-    private ExcelExportService excelExportService;
+    private CsvExportService csvExportService;
     private static final String excelPath = "C:/Users/User/.tapgen";
 
 
@@ -74,7 +74,7 @@ public class ModbusDataCollector {
         */
             // 写入Excel
 
-            excelExportService.appendDataToDailyExcel(allData, excelPath);
+            csvExportService.appendDataToDailyCsv(allData, excelPath);
 
 
         } catch (Exception e) {
