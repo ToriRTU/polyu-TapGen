@@ -136,7 +136,6 @@ public class CsvExportService {
         for (DeviceValue data : dataList) {
             String key = data.getDevice() + "_" + data.getNameCN();
             dataMap.put(key, data.getValue());
-            log.debug("数据映射: {} -> {}", key, data.getValue());
         }
         
         // 按照表头顺序填充数据（跳过第一列"时间"）
