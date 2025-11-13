@@ -72,14 +72,17 @@ public class ExcelExportService {
                     // 文件不存在，创建并写入表头
                     writer.writeRow(headerColumns);
                     writer.setColumnWidth(-1, 20);
+                    writer.setCurrentRow(2);
                     log.info("创建新的Excel文件并写入表头，共{}列", headerColumns.size());
+                }else{
+                    int lastrow = writer.getRowCount();
+                    writer.setCurrentRow(lastrow + 1);
                 }
                 
                 // 创建一行数据（按照表头顺序）
                 List<Object> rowData = createDataRow(dataList, timestamp);
                 writer.writeRow(rowData);
-                
-                log.debug("数据追加成功: {} -> {}个属性", 
+                log.debug("数据追加成功: {} -> {}个属性",
                          timestamp.format(DateTimeFormatter.ofPattern("HH:mm:ss")), 
                          dataList.size());
                 return true;
