@@ -47,7 +47,7 @@ public class DeviceService {
             log.warn("设备未连接，跳过读取: {}", deviceName);
             return result;
         }
-
+        log.info("collection group:{}, device:{}, host:{}", groupName, device, group.getHost());
         ModbusMaster master = connectionManager.getMaster(deviceName);
 
         try {
