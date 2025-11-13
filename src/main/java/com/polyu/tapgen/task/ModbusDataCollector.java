@@ -1,5 +1,6 @@
 package com.polyu.tapgen.task;
 
+import com.google.gson.Gson;
 import com.polyu.tapgen.config.Constants;
 import com.polyu.tapgen.config.DeviceGroup;
 import com.polyu.tapgen.db.DeviceService;
@@ -24,7 +25,7 @@ public class ModbusDataCollector {
     private DeviceService deviceService;
     @Resource
     private ExcelExportService excelExportService;
-    private static final String excelPath = "C:/Users/User/.tapgen/excel";
+    private static final String excelPath = "C:/Users/User/.tapgen";
 
 
     @Scheduled(fixedRate = 1000) // 1分钟执行一次
@@ -63,6 +64,7 @@ public class ModbusDataCollector {
             allData.addAll(bs600Future.get());
             allData.addAll(sui201Future.get());
             allData.addAll(singlePhaseMeterFuture.get());
+            log.info("{}", new Gson().toJson(allData));
             // 存储到InfluxDB
             /*
             deviceService.saveK24Data(groupName, k24Data);
@@ -72,7 +74,7 @@ public class ModbusDataCollector {
         */
             // 写入Excel
 
-            excelExportService.exportToExcel(allData, excelPath);
+            excelExportService.appendBatchDataToDailyExcel(allData, excelPath);
 
 
         } catch (Exception e) {
