@@ -8,11 +8,11 @@
 		<version>2.7.0</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.polyu.solarnexus</groupId>
-	<artifactId>datasuite</artifactId>
+	<groupId>com.polyu</groupId>
+	<artifactId>tapgen</artifactId>
 	<version>0.0.1</version>
-	<name>solar-nexus-datasuite</name>
-	<description>SolarNexus DataSuite</description>
+	<name>tapgen</name>
+	<description>Tapgen</description>
 
 	<properties>
 		<java.version>17</java.version>
