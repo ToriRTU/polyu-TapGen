@@ -10,7 +10,7 @@ import java.util.List;
 public enum DevicePoint {
     // ==================== K24 流量计 ====================
     K24_TOTAL_FLOW("流量计","flowmeter", "总累计流量", "Total flow", 0x0009, 2,  DataType.INT32,0.001, "L"),
-    K24_AVG_FLOW("流量计","flowmeter", "平均流量", "Flow rate", 0x0009, 2,  DataType.INT32,0.01, "L/min"),
+    K24_AVG_FLOW("流量计","flowmeter", "平均流量", "Avg flow rate", 0x000F, 2,  DataType.INT32,0.01, "L/min"),
     K24_INSTANT_FLOW("流量计","flowmeter", "瞬时流量", "Flow rate", 0x0017, 2, DataType.INT32, 0.01, "L"),
 
     // ==================== BS600 差压计 ====================
