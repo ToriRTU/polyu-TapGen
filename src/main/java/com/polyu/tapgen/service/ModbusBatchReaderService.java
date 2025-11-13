@@ -1,6 +1,9 @@
 package com.polyu.tapgen.service;
 
+import com.serotonin.modbus4j.ModbusFactory;
 import com.serotonin.modbus4j.ModbusMaster;
+import com.serotonin.modbus4j.exception.ModbusInitException;
+import com.serotonin.modbus4j.ip.IpParameters;
 import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest;
 import com.serotonin.modbus4j.msg.ReadHoldingRegistersResponse;
 import com.serotonin.modbus4j.exception.ModbusTransportException;
@@ -158,5 +161,42 @@ public class ModbusBatchReaderService {
                     Integer.toHexString(registers[i] & 0xFFFF),
                     registers[i] & 0xFFFF);
         }
+    }
+
+    public static void main(String[] args) throws ModbusInitException, ModbusTransportException {
+
+        IpParameters ipParams = new IpParameters();
+        ipParams.setHost("192.168.50.101");
+        ipParams.setPort(8899);
+        ModbusFactory modbusFactory = new ModbusFactory();
+        ModbusMaster master = modbusFactory.createTcpMaster(ipParams, false);
+        master.setTimeout(3000);
+        master.setRetries(2);
+        master.init();
+
+        int slaveId = 1;
+        int startRegister = 0x0000;
+        int quantity = 2;
+        ReadHoldingRegistersRequest request = new ReadHoldingRegistersRequest(slaveId, startRegister, quantity);
+        ReadHoldingRegistersResponse response = (ReadHoldingRegistersResponse) master.send(request);
+
+
+        // 获取响应数据
+        byte[] data = response.getData();
+        short[] registers = new short[quantity];
+
+        // 将字节数据转换为short数组 (Modbus是大端字节序)
+        for (int i = 0; i < quantity; i++) {
+            int index = i * 2;
+            if (index + 1 < data.length) {
+                // 大端字节序：高字节在前，低字节在后
+                int value = ((data[index] & 0xFF) << 8) | (data[index + 1] & 0xFF);
+                registers[i] = (short) value;
+            } else {
+                registers[i] = 0;
+            }
+        }
+        log.info("{}", registers);
+
     }
 }
