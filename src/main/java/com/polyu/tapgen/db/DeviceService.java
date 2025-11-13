@@ -15,6 +15,9 @@ import org.checkerframework.common.value.qual.StringVal;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -28,6 +31,8 @@ public class DeviceService {
     private ModbusConnectionManager connectionManager;
     @Resource
     private ModbusBatchReaderService readerService;
+    // 小数格式化（仅用于显示）
+    private final DecimalFormat decimalFormat = new DecimalFormat("#.###");
 
     /**
      * 采集数据
@@ -80,6 +85,9 @@ public class DeviceService {
 
                 if(val != null){
                     val = val * point.getMultiplier();
+                    BigDecimal bd = new BigDecimal(val);
+                    bd = bd.setScale(3, RoundingMode.HALF_UP);
+                    val = bd.doubleValue();
                     result.add(new DeviceValue(point,val, time));
                 }
             }
