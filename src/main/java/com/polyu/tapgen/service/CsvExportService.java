@@ -6,9 +6,8 @@ import com.polyu.tapgen.utils.DateTimeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -39,7 +38,7 @@ public class CsvExportService {
         for (String deviceCode : pointsByDevice.keySet()) {
             List<DevicePoint> devicePoints = pointsByDevice.get(deviceCode);
             for (DevicePoint point : devicePoints) {
-                String columnName = point.getDevice() + "/" + point.getNameCN();
+                String columnName = point.getDevice() + "_" + point.getNameCN();
                 columns.add(columnName);
             }
         }
@@ -52,6 +51,7 @@ public class CsvExportService {
      */
     public boolean appendDataToDailyCsv(List<DeviceValue> dataList, String basePath) {
         if (dataList.isEmpty()) {
+            log.warn("数据列表为空，无法导出");
             return true;
         }
         
@@ -63,21 +63,34 @@ public class CsvExportService {
             
             boolean isNewFile = !csvFile.exists();
             
-            try (FileWriter writer = new FileWriter(csvFile, true)) {
+            // 使用UTF-8编码，支持中文
+            try (FileOutputStream fos = new FileOutputStream(csvFile, true);
+                 OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
+                 BufferedWriter writer = new BufferedWriter(osw)) {
+                
+                // 如果是新文件，写入UTF-8 BOM头，确保Excel正确识别中文
                 if (isNewFile) {
+                    // 写入UTF-8 BOM
+                    fos.write(0xEF);
+                    fos.write(0xBB);
+                    fos.write(0xBF);
+                    
                     // 写入表头
                     String header = String.join(",", headerColumns);
-                    writer.write(header + "\n");
+                    writer.write(header);
+                    writer.newLine();
                     log.info("创建新的CSV文件并写入表头，共{}列", headerColumns.size());
                 }
                 
                 // 创建数据行并写入
                 String row = createCsvRow(dataList, timestamp);
-                writer.write(row + "\n");
+                writer.write(row);
+                writer.newLine();
                 
-                log.debug("CSV数据追加成功: {} -> {}个属性", 
+                log.info("CSV数据追加成功: {} -> {}个属性，文件: {}", 
                          timestamp.format(DateTimeFormatter.ofPattern("HH:mm:ss")), 
-                         dataList.size());
+                         dataList.size(),
+                         filePath);
                 return true;
                 
             } catch (IOException e) {
@@ -98,7 +111,10 @@ public class CsvExportService {
         String dirPath = basePath + File.separator + "data_export";
         File dir = new File(dirPath);
         if (!dir.exists()) {
-            dir.mkdirs();
+            boolean created = dir.mkdirs();
+            if (created) {
+                log.info("创建目录: {}", dirPath);
+            }
         }
         
         String fileName = "设备数据_" + date.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv";
@@ -120,6 +136,7 @@ public class CsvExportService {
         for (DeviceValue data : dataList) {
             String key = data.getDevice() + "_" + data.getNameCN();
             dataMap.put(key, data.getValue());
+            log.debug("数据映射: {} -> {}", key, data.getValue());
         }
         
         // 按照表头顺序填充数据（跳过第一列"时间"）
@@ -133,17 +150,19 @@ public class CsvExportService {
             }
         }
         
-        return String.join(",", row);
+        String result = String.join(",", row);
+        log.debug("生成的CSV行: {}", result);
+        return result;
     }
 
     /**
-     * CSV转义处理（如果值包含逗号或引号）
+     * CSV转义处理
      */
     private String escapeCsv(String value) {
         if (value == null) {
             return "";
         }
-        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+        if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }
         return value;
@@ -168,8 +187,8 @@ public class CsvExportService {
                 return 0;
             }
             
-            // 简单统计行数
-            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file))) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
                 int lines = 0;
                 while (reader.readLine() != null) {
                     lines++;
@@ -184,69 +203,37 @@ public class CsvExportService {
     }
 
     /**
+     * 读取CSV文件内容（用于调试）
+     */
+    public void debugCsvFile(String basePath, LocalDate date) {
+        try {
+            String filePath = getDailyFilePath(date, basePath);
+            File file = new File(filePath);
+            if (!file.exists()) {
+                log.info("文件不存在: {}", filePath);
+                return;
+            }
+            
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+                String line;
+                int lineNum = 0;
+                log.info("=== CSV文件内容 ===");
+                while ((line = reader.readLine()) != null) {
+                    log.info("行{}: {}", lineNum, line);
+                    lineNum++;
+                }
+            }
+            
+        } catch (Exception e) {
+            log.error("读取CSV文件失败", e);
+        }
+    }
+
+    /**
      * 获取表头信息
      */
     public List<String> getHeaderColumns() {
         return new ArrayList<>(headerColumns);
-    }
-
-    /**
-     * 批量追加多个时间点的数据（如果需要）
-     */
-    public boolean appendBatchDataToDailyCsv(List<List<DeviceValue>> batchDataList, String basePath) {
-        if (batchDataList.isEmpty()) {
-            return true;
-        }
-        
-        try {
-            // 按日期分组
-            Map<LocalDate, List<List<DeviceValue>>> dataByDate = new HashMap<>();
-            for (List<DeviceValue> timeData : batchDataList) {
-                if (!timeData.isEmpty()) {
-                    LocalDateTime timestamp = DateTimeUtil.parse(timeData.get(0).getTime());
-                    LocalDate date = timestamp.toLocalDate();
-                    dataByDate.computeIfAbsent(date, k -> new ArrayList<>()).add(timeData);
-                }
-            }
-            
-            // 为每个日期处理数据
-            for (Map.Entry<LocalDate, List<List<DeviceValue>>> entry : dataByDate.entrySet()) {
-                String filePath = getDailyFilePath(entry.getKey(), basePath);
-                File csvFile = new File(filePath);
-                
-                boolean isNewFile = !csvFile.exists();
-                
-                try (FileWriter writer = new FileWriter(csvFile, true)) {
-                    if (isNewFile) {
-                        // 写入表头
-                        String header = String.join(",", headerColumns);
-                        writer.write(header + "\n");
-                    }
-                    
-                    // 按时间排序后写入
-                    List<List<DeviceValue>> sortedData = entry.getValue().stream()
-                            .sorted(Comparator.comparing(list -> DateTimeUtil.parse(list.get(0).getTime())))
-                            .collect(Collectors.toList());
-                    
-                    for (List<DeviceValue> timeData : sortedData) {
-                        LocalDateTime timestamp = DateTimeUtil.parse(timeData.get(0).getTime());
-                        String row = createCsvRow(timeData, timestamp);
-                        writer.write(row + "\n");
-                    }
-                    
-                    log.info("CSV批量追加成功: {}个时间点 -> {}", sortedData.size(), filePath);
-                    
-                } catch (IOException e) {
-                    log.error("批量追加CSV数据失败: {}", filePath, e);
-                    return false;
-                }
-            }
-            
-            return true;
-            
-        } catch (Exception e) {
-            log.error("处理批量数据失败", e);
-            return false;
-        }
     }
 }
