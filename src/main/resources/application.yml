@@ -28,22 +28,22 @@ modbus:
     reconnect-interval: 5000
   groups:
     - name: "group-1"
-      k24:
+      flowmeter:
         name: "flowmeter_1"
         host: "192.168.50.101"
         port: 8899
         slave-id: 1
-      bs600:
+      pressure:
         name: "pressure_1"
         host: "192.168.50.102"
         port: 8899
         slave-id: 1
-      singlePhaseMeter:
+      acpower:
         name: "ACPower_1"
         host: "192.168.50.103"
         port: 8899
         slave-id: 1
-      sui201:
+      dcpower:
         name: "DCPower_1"
         host: "192.168.50.104"
         port: 8899

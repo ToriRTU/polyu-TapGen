@@ -5,8 +5,8 @@ import lombok.Data;
 @Data
 public class DeviceGroup {
     private String name;
-    private DeviceConfig k24;
-    private DeviceConfig bs600;
-    private DeviceConfig sui201;
-    private DeviceConfig singlePhaseMeter;
+    private DeviceConfig flowmeter;
+    private DeviceConfig pressure;
+    private DeviceConfig acpower;
+    private DeviceConfig dcpower;
 }

@@ -2,9 +2,10 @@ package com.polyu.tapgen.service;
 
 import cn.hutool.poi.excel.ExcelUtil;
 import cn.hutool.poi.excel.ExcelWriter;
-import com.polyu.tapgen.device.*;
+import com.polyu.tapgen.modbus.DevicePoint;
+import com.polyu.tapgen.modbus.DeviceValue;
+import com.polyu.tapgen.utils.DateTimeUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -12,301 +13,341 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
+@Service
 public class ExcelExportService {
-    
-    private final Map<String, ExcelWriter> excelWriters = new ConcurrentHashMap<>();
-    private final Map<String, LocalDate> currentDates = new ConcurrentHashMap<>();
-    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    
-    // 设备属性中英文映射
-    private final Map<String, Map<String, String>> deviceFieldMappings = new HashMap<>();
-    
-    public ExcelExportService() {
-        initFieldMappings();
-    }
-    
+
     /**
-     * 初始化设备字段中英文映射
+     * 导出设备数据到Excel（每天一个文件，支持追加）
      */
-    private void initFieldMappings() {
-        // K24流量计字段映射
-        Map<String, String> k24Mapping = new LinkedHashMap<>();
-        k24Mapping.put("flowRate", "瞬时流量(Flow Rate)");
-        k24Mapping.put("totalAccumulated", "总累计(Total Accumulated)");
-        k24Mapping.put("shiftAccumulated", "班累(Shift Accumulated)");
-        k24Mapping.put("averageFlowVelocity", "平均流速(Avg Flow Velocity)");
-        k24Mapping.put("instantaneousVelocity", "瞬时流速(Instant Velocity)");
-        k24Mapping.put("price", "单价(Price)");
-        k24Mapping.put("unit", "单位(Unit)");
-        k24Mapping.put("coefficient", "系数(Coefficient)");
-        k24Mapping.put("calibrationPulse", "校正脉冲(Calibration Pulse)");
-        k24Mapping.put("timestampRegister", "时间戳(Timestamp)");
-        k24Mapping.put("timeUnit", "时间单位(Time Unit)");
-        deviceFieldMappings.put("k24", k24Mapping);
-        
-        // BS600差压计字段映射
-        Map<String, String> bs600Mapping = new LinkedHashMap<>();
-        bs600Mapping.put("intMainValue", "整型主变量(Int Main Value)");
-        bs600Mapping.put("intBoardTemp", "板卡温度(Board Temp)");
-        bs600Mapping.put("floatMainValue", "浮点主变量(Float Main Value)");
-        bs600Mapping.put("floatBoardTemp", "浮点板卡温度(Float Board Temp)");
-        bs600Mapping.put("modbusAddress", "Modbus地址(Modbus Address)");
-        bs600Mapping.put("baudRate", "波特率(Baud Rate)");
-        bs600Mapping.put("parity", "校验位(Parity)");
-        bs600Mapping.put("mainUnit", "主变量单位(Main Unit)");
-        bs600Mapping.put("subUnit", "副变量单位(Sub Unit)");
-        bs600Mapping.put("mainDecimal", "主变量小数位(Main Decimal)");
-        bs600Mapping.put("subDecimal", "副变量小数位(Sub Decimal)");
-        bs600Mapping.put("mainOffset", "主变量偏移(Main Offset)");
-        bs600Mapping.put("mainGain", "主变量增益(Main Gain)");
-        deviceFieldMappings.put("bs600", bs600Mapping);
-        
-        // SUI201功率计字段映射
-        Map<String, String> sui201Mapping = new LinkedHashMap<>();
-        sui201Mapping.put("voltage", "电压(Voltage)");
-        sui201Mapping.put("current", "电流(Current)");
-        sui201Mapping.put("power", "功率(Power)");
-        sui201Mapping.put("accumulatedEnergy", "累计电量(Accumulated Energy)");
-        sui201Mapping.put("baudRate", "波特率(Baud Rate)");
-        sui201Mapping.put("modbusAddress", "Modbus地址(Modbus Address)");
-        sui201Mapping.put("energyUnit", "电量单位(Energy Unit)");
-        sui201Mapping.put("samplingFrequency", "采样频率(Sampling Frequency)");
-        sui201Mapping.put("accumulationMode", "累积模式(Accumulation Mode)");
-        sui201Mapping.put("voltageRange", "电压档位(Voltage Range)");
-        sui201Mapping.put("coulombCorrection", "库仑计修正(Coulomb Correction)");
-        deviceFieldMappings.put("sui201", sui201Mapping);
-        
-        // 单相电表字段映射
-        Map<String, String> singlePhaseMapping = new LinkedHashMap<>();
-        singlePhaseMapping.put("voltage", "电压(Voltage)");
-        singlePhaseMapping.put("current", "电流(Current)");
-        singlePhaseMapping.put("activePower", "有功功率(Active Power)");
-        singlePhaseMapping.put("reactivePower", "无功功率(Reactive Power)");
-        singlePhaseMapping.put("apparentPower", "视在功率(Apparent Power)");
-        singlePhaseMapping.put("powerFactor", "功率因素(Power Factor)");
-        singlePhaseMapping.put("frequency", "频率(Frequency)");
-        singlePhaseMapping.put("forwardActiveEnergy", "正向有功电能(Forward Energy)");
-        singlePhaseMapping.put("reverseActiveEnergy", "反向有功电能(Reverse Energy)");
-        singlePhaseMapping.put("alarmOutput", "报警输出(Alarm Output)");
-        singlePhaseMapping.put("digitalInput", "开关量输入(Digital Input)");
-        singlePhaseMapping.put("password", "密码(Password)");
-        singlePhaseMapping.put("modbusAddress", "Modbus地址(Modbus Address)");
-        singlePhaseMapping.put("baudRate", "波特率(Baud Rate)");
-        singlePhaseMapping.put("parity", "校验位(Parity)");
-        singlePhaseMapping.put("ptRatio", "PT变比(PT Ratio)");
-        singlePhaseMapping.put("ctRatio", "CT变比(CT Ratio)");
-        deviceFieldMappings.put("single_phase_meter", singlePhaseMapping);
-    }
-    
-    /**
-     * 检查是否需要创建新的Excel文件（每天一个文件）
-     */
-    private void checkAndCreateExcelFile(String groupName) {
-        LocalDate today = LocalDate.now();
-        LocalDate currentDate = currentDates.get(groupName);
-        
-        // 如果日期变化或文件不存在，创建新文件
-        if (currentDate == null || !currentDate.equals(today)) {
-            closeCurrentWriter(groupName);
-            createNewExcelFile(groupName, today);
+    public String exportToExcel(List<DeviceValue> allData, String basePath) {
+        try {
+            if (allData.isEmpty()) {
+                log.warn("没有数据可导出");
+                return null;
+            }
+
+            // 按日期分组
+            Map<LocalDate, List<DeviceValue>> dataByDate = groupDataByDate(allData);
+
+            // 为每天的数据生成或追加Excel
+            List<String> exportedFiles = new ArrayList<>();
+            for (Map.Entry<LocalDate, List<DeviceValue>> entry : dataByDate.entrySet()) {
+                String filePath = exportOrAppendDailyData(entry.getKey(), entry.getValue(), basePath);
+                if (filePath != null) {
+                    exportedFiles.add(filePath);
+                }
+            }
+
+            return exportedFiles.isEmpty() ? null : String.join(",", exportedFiles);
+
+        } catch (Exception e) {
+            log.error("导出Excel失败", e);
+            return null;
         }
     }
-    
+
+    /**
+     * 按日期分组数据
+     */
+    private Map<LocalDate, List<DeviceValue>> groupDataByDate(List<DeviceValue> allData) {
+        Map<LocalDate, List<DeviceValue>> result = new HashMap<>();
+        
+        for (DeviceValue data : allData) {
+            LocalDate date = DateTimeUtil.parse(data.getTime()).toLocalDate();
+            result.computeIfAbsent(date, k -> new ArrayList<>()).add(data);
+        }
+        
+        return result;
+    }
+
+    /**
+     * 导出或追加单日数据到Excel
+     */
+    private String exportOrAppendDailyData(LocalDate date, List<DeviceValue> dailyData, String basePath) {
+        if (dailyData.isEmpty()) {
+            return null;
+        }
+
+        // 创建目录
+        String dirPath = basePath + File.separator + "data_export";
+        File dir = new File(dirPath);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        // 生成文件名
+        String fileName = "设备数据_" + date.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".xlsx";
+        String filePath = dirPath + File.separator + fileName;
+
+        File excelFile = new File(filePath);
+        
+        try {
+            if (excelFile.exists()) {
+                // 文件存在，追加数据
+                return appendToExistingExcel(filePath, dailyData);
+            } else {
+                // 文件不存在，创建新文件
+                return createNewExcel(filePath, dailyData);
+            }
+            
+        } catch (Exception e) {
+            log.error("处理Excel文件失败: {}", filePath, e);
+            return null;
+        }
+    }
+
     /**
      * 创建新的Excel文件
      */
-    private void createNewExcelFile(String groupName, LocalDate date) {
-        try {
-            String fileName = "设备数据_" + groupName + "_" + date.format(dateFormatter) + ".xlsx";
+    private String createNewExcel(String filePath, List<DeviceValue> dailyData) {
+        try (ExcelWriter writer = ExcelUtil.getWriter(filePath)) {
             
-            // 创建Excel写入器
-            ExcelWriter writer = ExcelUtil.getWriter(fileName);
+            // 准备表头和数据
+            List<Map<String, Object>> rows = prepareExcelData(dailyData);
             
-            // 设置表头
-            setExcelHeader(writer, groupName);
+            // 写入数据
+            writer.write(rows, true);
             
-            excelWriters.put(groupName, writer);
-            currentDates.put(groupName, date);
+            // 设置表头样式
+            writer.setCurrentRow(0);
+            writer.setColumnWidth(-1, 20);
             
-            log.info("创建新的Excel文件: {}", fileName);
+            log.info("创建新的Excel文件成功: {}", filePath);
+            return filePath;
             
         } catch (Exception e) {
-            log.error("创建Excel文件失败: {}", groupName, e);
+            log.error("创建Excel文件失败: {}", filePath, e);
+            return null;
         }
     }
-    
+
     /**
-     * 设置Excel表头
+     * 追加数据到已存在的Excel文件
      */
-    private void setExcelHeader(ExcelWriter writer, String groupName) {
-        List<String> headers = new ArrayList<>();
-        
-        // 第一列：时间
-        headers.add("时间(Time)");
-        
-        // 为每个设备类型创建列
-        for (Map.Entry<String, Map<String, String>> entry : deviceFieldMappings.entrySet()) {
-            String deviceType = entry.getKey();
-            Map<String, String> fields = entry.getValue();
+    private String appendToExistingExcel(String filePath, List<DeviceValue> newData) {
+        try (ExcelWriter writer = ExcelUtil.getWriter(filePath)) {
+            // Hutool的ExcelWriter在append模式下会自动定位到最后一行
             
-            for (Map.Entry<String, String> fieldEntry : fields.entrySet()) {
-                headers.add(getDeviceDisplayName(deviceType) + "-" + fieldEntry.getValue());
-            }
-        }
-        
-        // 写入表头
-        writer.writeHeadRow(headers);
-    }
-    
-    /**
-     * 获取设备显示名称
-     */
-    private String getDeviceDisplayName(String deviceType) {
-        switch (deviceType) {
-            case "k24": return "流量计";
-            case "bs600": return "差压计";
-            case "sui201": return "功率计";
-            case "single_phase_meter": return "单相电表";
-            default: return deviceType;
+            // 准备要追加的数据
+            List<Map<String, Object>> newRows = prepareExcelData(newData);
+            
+            // 直接追加数据（不读取现有内容）
+            writer.write(newRows, false); // false表示追加模式
+            
+            log.info("追加数据到Excel文件成功: {}，追加{}条数据", filePath, newRows.size());
+            return filePath;
+            
+        } catch (Exception e) {
+            log.error("追加数据到Excel文件失败: {}", filePath, e);
+            return null;
         }
     }
-    
+
     /**
-     * 写入设备数据到Excel
+     * 准备Excel数据
      */
-    public synchronized void writeDataToExcel(String groupName, 
-                                            K24FlowMeterData k24Data,
-                                            BS600DifferentialPressureData bs600Data,
-                                            SUI201PowerData sui201Data,
-                                            SinglePhaseMeterData singlePhaseData) {
-        try {
-            // 检查是否需要创建新文件
-            checkAndCreateExcelFile(groupName);
+    private List<Map<String, Object>> prepareExcelData(List<DeviceValue> dailyData) {
+        // 按时间戳分组，同一时间戳的数据放在一行
+        Map<LocalDateTime, Map<String, DeviceValue>> dataByTime = new LinkedHashMap<>();
+        Set<String> allColumns = new LinkedHashSet<>();
+        
+        // 第一列固定为时间
+        allColumns.add("时间");
+        
+        // 收集所有属性列
+        for (DeviceValue data : dailyData) {
+            String columnName = data.getDevice() + "_" + data.getNameCN();
+            allColumns.add(columnName);
             
-            ExcelWriter writer = excelWriters.get(groupName);
-            if (writer == null) {
-                log.warn("Excel写入器未初始化: {}", groupName);
-                return;
-            }
-            
-            // 创建数据行
-            List<Object> rowData = new ArrayList<>();
+            dataByTime.computeIfAbsent(DateTimeUtil.parse(data.getTime()), k -> new HashMap<>())
+                     .put(columnName, data);
+        }
+        
+        // 构建行数据
+        List<Map<String, Object>> rows = new ArrayList<>();
+        
+        for (Map.Entry<LocalDateTime, Map<String, DeviceValue>> timeEntry : dataByTime.entrySet()) {
+            Map<String, Object> row = new LinkedHashMap<>();
             
             // 第一列：时间
-            rowData.add(LocalDateTime.now().format(timeFormatter));
+            row.put("时间", timeEntry.getKey().format(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             
-            // 添加K24数据
-            addDeviceDataToRow(rowData, "k24", k24Data);
+            // 后续列：各设备数据
+            Map<String, DeviceValue> timeData = timeEntry.getValue();
+            for (String column : allColumns) {
+                if ("时间".equals(column)) continue;
+                
+                DeviceValue data = timeData.get(column);
+                if (data != null) {
+                    row.put(column, data.getValue());
+                } else {
+                    row.put(column, ""); // 空单元格
+                }
+            }
             
-            // 添加BS600数据
-            addDeviceDataToRow(rowData, "bs600", bs600Data);
+            rows.add(row);
+        }
+        
+        // 按时间排序
+        rows.sort((row1, row2) -> {
+            String time1 = (String) row1.get("时间");
+            String time2 = (String) row2.get("时间");
+            return time1.compareTo(time2);
+        });
+        
+        return rows;
+    }
+
+    /**
+     * 导出设备数据到Excel（简化版本，所有数据在一个文件）
+     */
+    public String exportAllToExcel(List<DeviceValue> allData, String basePath) {
+        try {
+            if (allData.isEmpty()) {
+                log.warn("没有数据可导出");
+                return null;
+            }
+
+            // 创建目录
+            String dirPath = basePath + File.separator + "data_export";
+            File dir = new File(dirPath);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            // 生成文件名（包含时间范围）
+            LocalDateTime minTime = allData.stream()
+                    .map(data -> DateTimeUtil.parse(data.getTime()))
+                    .min(LocalDateTime::compareTo)
+                    .orElse(LocalDateTime.now());
+            LocalDateTime maxTime = allData.stream()
+                    .map(data -> DateTimeUtil.parse(data.getTime()))
+                    .max(LocalDateTime::compareTo)
+                    .orElse(LocalDateTime.now());
             
-            // 添加SUI201数据
-            addDeviceDataToRow(rowData, "sui201", sui201Data);
-            
-            // 添加单相电表数据
-            addDeviceDataToRow(rowData, "single_phase_meter", singlePhaseData);
-            
-            // 写入行数据
-            writer.writeRow(rowData);
-            
-            // 立即刷新到文件（确保数据不丢失）
-            writer.flush();
-            
-            log.debug("数据写入Excel成功: {}", groupName);
-            
+            String fileName = String.format("设备数据_%s_%s.xlsx",
+                    minTime.format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")),
+                    maxTime.format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
+            String filePath = dirPath + File.separator + fileName;
+
+            try (ExcelWriter writer = ExcelUtil.getWriter(filePath)) {
+                
+                // 准备表头和数据
+                List<Map<String, Object>> rows = prepareExcelData(allData);
+                
+                // 写入数据
+                writer.write(rows, true);
+                
+                // 设置表头样式
+                writer.setCurrentRow(0);
+                writer.setColumnWidth(-1, 20);
+                
+                log.info("Excel文件生成成功: {}", filePath);
+                return filePath;
+                
+            } catch (Exception e) {
+                log.error("生成Excel文件失败: {}", filePath, e);
+                return null;
+            }
+
         } catch (Exception e) {
-            log.error("写入Excel失败: {}", groupName, e);
+            log.error("导出Excel失败", e);
+            return null;
         }
     }
-    
+
     /**
-     * 添加设备数据到行
+     * 获取导出的文件列表
      */
-    private void addDeviceDataToRow(List<Object> rowData, String deviceType, Object data) {
-        Map<String, String> fieldMapping = deviceFieldMappings.get(deviceType);
+    public List<String> getExportedFiles(String basePath) {
+        String dirPath = basePath + File.separator + "data_export";
+        File dir = new File(dirPath);
         
-        if (data == null) {
-            // 如果没有数据，添加空值
-            for (int i = 0; i < fieldMapping.size(); i++) {
-                rowData.add("-");
-            }
+        if (!dir.exists() || !dir.isDirectory()) {
+            return Collections.emptyList();
+        }
+        
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".xlsx"));
+        if (files == null) {
+            return Collections.emptyList();
+        }
+        
+        List<String> fileList = new ArrayList<>();
+        for (File file : files) {
+            fileList.add(file.getAbsolutePath());
+        }
+        
+        // 按修改时间排序（最新的在前）
+        fileList.sort((f1, f2) -> {
+            File file1 = new File(f1);
+            File file2 = new File(f2);
+            return Long.compare(file2.lastModified(), file1.lastModified());
+        });
+        
+        return fileList;
+    }
+
+    /**
+     * 删除旧的导出文件（保留最近N天）
+     */
+    public void cleanOldFiles(String basePath, int keepDays) {
+        String dirPath = basePath + File.separator + "data_export";
+        File dir = new File(dirPath);
+        
+        if (!dir.exists() || !dir.isDirectory()) {
             return;
         }
         
-        try {
-            for (String fieldName : fieldMapping.keySet()) {
-                java.lang.reflect.Field field = data.getClass().getDeclaredField(fieldName);
-                field.setAccessible(true);
-                Object value = field.get(data);
-                
-                if (value != null) {
-                    rowData.add(value);
-                } else {
-                    rowData.add("-");
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".xlsx"));
+        if (files == null) {
+            return;
+        }
+        
+        LocalDate cutoffDate = LocalDate.now().minusDays(keepDays);
+        
+        for (File file : files) {
+            try {
+                String fileName = file.getName();
+                // 从文件名中提取日期
+                if (fileName.startsWith("设备数据_") && fileName.length() >= 16) {
+                    String dateStr = fileName.substring(4, 12); // yyyyMMdd
+                    LocalDate fileDate = LocalDate.parse(dateStr, DateTimeFormatter.BASIC_ISO_DATE);
+                    
+                    if (fileDate.isBefore(cutoffDate)) {
+                        if (file.delete()) {
+                            log.info("删除旧文件: {}", file.getName());
+                        }
+                    }
                 }
-            }
-        } catch (Exception e) {
-            log.error("添加设备数据失败: {}", deviceType, e);
-            // 添加空值占位
-            for (int i = 0; i < fieldMapping.size(); i++) {
-                rowData.add("-");
+            } catch (Exception e) {
+                log.warn("处理文件时出错: {}", file.getName(), e);
             }
         }
     }
-    
+
     /**
-     * 关闭当前的Excel写入器
+     * 检查文件是否存在
      */
-    private void closeCurrentWriter(String groupName) {
-        try {
-            ExcelWriter writer = excelWriters.get(groupName);
-            if (writer != null) {
-                writer.close();
-                excelWriters.remove(groupName);
-                log.info("关闭Excel写入器: {}", groupName);
-            }
-        } catch (Exception e) {
-            log.error("关闭Excel写入器失败: {}", groupName, e);
-        }
+    public boolean isFileExists(String basePath, LocalDate date) {
+        String dirPath = basePath + File.separator + "data_export";
+        String fileName = "设备数据_" + date.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".xlsx";
+        String filePath = dirPath + File.separator + fileName;
+        
+        return new File(filePath).exists();
     }
-    
+
     /**
-     * 获取所有活跃的Excel文件
+     * 获取文件大小
      */
-    public Set<String> getActiveWorkbooks() {
-        return excelWriters.keySet();
-    }
-    
-    /**
-     * 强制关闭所有Excel写入器
-     */
-    public void closeAllWriters() {
-        for (String groupName : excelWriters.keySet()) {
-            closeCurrentWriter(groupName);
-        }
-        currentDates.clear();
-    }
-    
-    /**
-     * 检查并处理日期变更
-     */
-    @Scheduled(cron = "0 0 0 * * ?") // 每天凌晨执行
-    public void handleDateChange() {
-        log.info("=== 处理日期变更，创建新的Excel文件 ===");
-        for (String groupName : new ArrayList<>(excelWriters.keySet())) {
-            checkAndCreateExcelFile(groupName);
-        }
-    }
-    
-    /**
-     * 应用关闭时清理资源
-     */
-    public void destroy() {
-        closeAllWriters();
+    public long getFileSize(String basePath, LocalDate date) {
+        String dirPath = basePath + File.separator + "data_export";
+        String fileName = "设备数据_" + date.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".xlsx";
+        String filePath = dirPath + File.separator + fileName;
+        
+        File file = new File(filePath);
+        return file.exists() ? file.length() : 0;
     }
 }

@@ -12,4 +12,11 @@ public class Constants {
         public static final String ONLINE_STATUS = "status";
     }
 
+    public class Device{
+        public static final String FLOW_METER = "flowmeter";
+        public static final String PRESSURE = "pressure";
+        public static final String AC = "acpower";
+        public static final String DC = "dcpower";
+    }
+
 }
