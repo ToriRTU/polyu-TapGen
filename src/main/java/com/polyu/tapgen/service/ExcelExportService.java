@@ -19,6 +19,37 @@ import java.util.stream.Collectors;
 @Service
 public class ExcelExportService {
 
+    // 预定义表头顺序
+    private final List<String> headerColumns;
+
+    public ExcelExportService() {
+        // 初始化时生成固定的表头顺序
+        this.headerColumns = generateHeaderColumns();
+    }
+
+    /**
+     * 生成固定的表头顺序
+     */
+    private List<String> generateHeaderColumns() {
+        List<String> columns = new ArrayList<>();
+        columns.add("时间"); // 第一列固定为时间
+        
+        // 按设备分组，确保表头顺序一致
+        Map<String, List<DevicePoint>> pointsByDevice = Arrays.stream(DevicePoint.values())
+                .collect(Collectors.groupingBy(DevicePoint::getDeivceCode));
+        
+        // 按设备顺序添加列
+        for (String deviceCode : pointsByDevice.keySet()) {
+            List<DevicePoint> devicePoints = pointsByDevice.get(deviceCode);
+            for (DevicePoint point : devicePoints) {
+                String columnName = point.getDeivceCode() + "_" + point.getCode();
+                columns.add(columnName);
+            }
+        }
+        
+        return columns;
+    }
+
     /**
      * 追加一个时间点的所有设备数据到当天的Excel文件
      */
@@ -34,15 +65,19 @@ public class ExcelExportService {
             String filePath = getDailyFilePath(date, basePath);
             File excelFile = new File(filePath);
             
+            boolean isNewFile = !excelFile.exists();
+            
             try (ExcelWriter writer = ExcelUtil.getWriter(excelFile)) {
-                if (!excelFile.exists()) {
+                if (isNewFile) {
                     // 文件不存在，创建并写入表头
-                    writeHeader(writer);
+                    writer.writeRow(headerColumns);
+                    writer.setColumnWidth(-1, 20);
+                    log.info("创建新的Excel文件并写入表头，共{}列", headerColumns.size());
                 }
                 
-                // 创建一行数据
-                Map<String, Object> row = createDataRow(dataList, timestamp);
-                writer.writeRow(row.values());
+                // 创建一行数据（按照表头顺序）
+                List<Object> rowData = createDataRow(dataList, timestamp);
+                writer.writeRow(rowData);
                 
                 log.debug("数据追加成功: {} -> {}个属性", 
                          timestamp.format(DateTimeFormatter.ofPattern("HH:mm:ss")), 
@@ -75,70 +110,31 @@ public class ExcelExportService {
     }
 
     /**
-     * 写入表头（基于DevicePoint枚举生成）
+     * 创建数据行（按照表头顺序）
      */
-    private void writeHeader(ExcelWriter writer) {
-        List<Object> header = new ArrayList<>();
-        
-        // 第一列固定为时间
-        header.add("时间");
-        
-        // 每个属性一列，格式：设备_属性名
-        Set<String> columns = getAllColumns();
-        header.addAll(columns);
-        
-        writer.writeRow(header);
-        writer.setColumnWidth(-1, 20);
-        
-        log.info("创建新的Excel文件并写入表头，共{}列", header.size());
-    }
-
-    /**
-     * 获取所有列头（基于DevicePoint枚举）
-     */
-    private Set<String> getAllColumns() {
-        Set<String> columns = new LinkedHashSet<>();
-        
-        // 从DevicePoint枚举中提取所有列
-        for (DevicePoint point : DevicePoint.values()) {
-            String columnName = point.getDevice() + "_" + point.getNameCN();
-            columns.add(columnName);
-        }
-        
-        return columns;
-    }
-
-    /**
-     * 创建数据行
-     */
-    private Map<String, Object> createDataRow(List<DeviceValue> dataList, LocalDateTime timestamp) {
-        Map<String, Object> row = new LinkedHashMap<>();
+    private List<Object> createDataRow(List<DeviceValue> dataList, LocalDateTime timestamp) {
+        List<Object> row = new ArrayList<>();
         
         // 第一列：时间
         String timeStr = timestamp.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        row.put("时间", timeStr);
+        row.add(timeStr);
         
-        // 为每个属性列填充数据
-        Set<String> allColumns = getAllColumns();
-        for (String column : allColumns) {
-            if ("时间".equals(column)) continue;
-            
-            // 查找对应列的数据
-            Optional<DeviceValue> matchedData = dataList.stream()
-                .filter(data -> column.equals(data.getDevice() + "_" + data.getNameCN()))
-                .findFirst();
-            
-            if (matchedData.isPresent()) {
-                row.put(column, matchedData.get().getValue());
-            } else {
-                row.put(column, ""); // 没有数据的列留空
-            }
+        // 创建数据映射，便于查找
+        Map<String, Double> dataMap = dataList.stream()
+                .collect(Collectors.toMap(
+                    data -> data.getDevice() + "_" + data.getCode(),
+                    DeviceValue::getValue
+                ));
+        
+        // 按照表头顺序填充数据（跳过第一列"时间"）
+        for (int i = 1; i < headerColumns.size(); i++) {
+            String column = headerColumns.get(i);
+            Double value = dataMap.get(column);
+            row.add(value != null ? value : ""); // 有数据填数据，没有填空字符串
         }
         
         return row;
     }
-
-
 
     /**
      * 检查当天的Excel文件是否存在
@@ -166,5 +162,12 @@ public class ExcelExportService {
             log.error("获取文件行数失败", e);
             return 0;
         }
+    }
+
+    /**
+     * 获取表头信息（用于调试）
+     */
+    public List<String> getHeaderColumns() {
+        return new ArrayList<>(headerColumns);
     }
 }
