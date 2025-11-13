@@ -74,7 +74,7 @@ public class ModbusDataCollector {
         */
             // 写入Excel
 
-            excelExportService.appendBatchDataToDailyExcel(allData, excelPath);
+            excelExportService.appendDataToDailyExcel(allData, excelPath);
 
 
         } catch (Exception e) {
