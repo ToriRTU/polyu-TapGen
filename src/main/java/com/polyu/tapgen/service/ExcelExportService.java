@@ -72,11 +72,11 @@ public class ExcelExportService {
                     // 文件不存在，创建并写入表头
                     writer.writeRow(headerColumns);
                     writer.setColumnWidth(-1, 20);
-                    writer.setCurrentRow(2);
+                    writer.setCurrentRow(1);
                     log.info("创建新的Excel文件并写入表头，共{}列", headerColumns.size());
                 }else{
                     int lastrow = writer.getRowCount();
-                    writer.setCurrentRow(lastrow + 1);
+                    writer.setCurrentRow(lastrow);
                 }
                 
                 // 创建一行数据（按照表头顺序）
