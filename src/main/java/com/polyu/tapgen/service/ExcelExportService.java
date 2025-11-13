@@ -42,7 +42,7 @@ public class ExcelExportService {
         for (String deviceCode : pointsByDevice.keySet()) {
             List<DevicePoint> devicePoints = pointsByDevice.get(deviceCode);
             for (DevicePoint point : devicePoints) {
-                String columnName = point.getDeivceCode() + "_" + point.getCode();
+                String columnName = point.getDevice() + "/" + point.getNameCN();
                 columns.add(columnName);
             }
         }
@@ -122,7 +122,7 @@ public class ExcelExportService {
         // 创建数据映射，便于查找
         Map<String, Double> dataMap = dataList.stream()
                 .collect(Collectors.toMap(
-                    data -> data.getDevice() + "_" + data.getCode(),
+                    data -> data.getDevice() + "/" + data.getNameCN(),
                     DeviceValue::getValue
                 ));
         
