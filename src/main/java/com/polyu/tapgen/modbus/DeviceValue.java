@@ -14,6 +14,7 @@ public class DeviceValue {
      */
     private String device;
     private String deivceCode;
+    private String deviceName;
     /**
      * 属性中文名称
      */
@@ -53,10 +54,11 @@ public class DeviceValue {
         this.multiplier = point.getMultiplier();
         this.unit = point.getUnit();
     }
-    public DeviceValue(DevicePoint point,String group, Double value, String time){
+    public DeviceValue(DevicePoint point,String group,String deviceName, Double value, String time){
         this.device = point.getDevice();
         this.group = group;
         this.deivceCode = point.getDeivceCode();
+        this.deviceName = deviceName;
         this.nameCN = point.getNameCN();
         this.code = point.getCode();
         this.address = point.getAddress();

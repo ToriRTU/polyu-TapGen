@@ -93,7 +93,7 @@ public class DeviceService {
                     BigDecimal bd = new BigDecimal(val);
                     bd = bd.setScale(3, RoundingMode.HALF_UP);
                     val = bd.doubleValue();
-                    result.add(new DeviceValue(point,groupName, val, time));
+                    result.add(new DeviceValue(point,groupName,deviceName, val, time));
                 }
             }
             // 读取配置寄存器
@@ -107,7 +107,7 @@ public class DeviceService {
     }
 
     public void saveToDB(List<DeviceValue> datas){
-        List<DeviceDataDTO> list = datas.stream().map(e -> new DeviceDataDTO(e.getGroup(), e.getDevice(), e.getCode(), e.getValue(), DateTimeUtil.parse(e.getTime()).atZone(ZoneId.systemDefault()).toEpochSecond())).collect(Collectors.toList());
+        List<DeviceDataDTO> list = datas.stream().map(e -> new DeviceDataDTO(e.getGroup(), e.getDeviceName(), e.getCode(), e.getValue(), DateTimeUtil.parse(e.getTime()).atZone(ZoneId.systemDefault()).toEpochSecond())).collect(Collectors.toList());
         log.info("{}", new Gson().toJson(list));
         influxService.writeData(list);
     }
