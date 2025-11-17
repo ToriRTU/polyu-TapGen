@@ -14,7 +14,5 @@ public class DeviceDataDTO {
     private String device;
     private String code;
     private Double value;
-
-
     private Long time;
 }

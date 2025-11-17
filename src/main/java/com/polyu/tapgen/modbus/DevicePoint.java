@@ -9,12 +9,12 @@ import java.util.List;
 @Getter
 public enum DevicePoint {
     // ==================== K24 流量计 ====================
-    K24_TOTAL_FLOW("流量计","flowmeter", "总累计流量", "Total flow", 0x0009, 2,  DataType.INT32,0.001, "L"),
-    K24_AVG_FLOW("流量计","flowmeter", "平均流量", "Avg flow rate", 0x000F, 2,  DataType.INT32,0.01, "L/min"),
-    K24_INSTANT_FLOW("流量计","flowmeter", "瞬时流量", "Flow rate", 0x0017, 2, DataType.INT32, 0.01, "L"),
+    K24_TOTAL_FLOW("流量计","k24", "总累计流量", "Total flow", 0x0009, 2,  DataType.INT32,0.001, "L"),
+    K24_AVG_FLOW("流量计","k24", "平均流量", "Avg flow rate", 0x000F, 2,  DataType.INT32,0.01, "L/min"),
+    K24_INSTANT_FLOW("流量计","k24", "瞬时流量", "Flow rate", 0x0017, 2, DataType.INT32, 0.01, "L"),
 
     // ==================== BS600 差压计 ====================
-    BS600_PRESSURE_DIFF("差压计","pressure", "差压", "Pressure difference", 0x0002, 2, DataType.FLOAT_SWAP, 1.0, ""),
+    BS600_PRESSURE_DIFF("差压计","bs600", "差压", "Pressure difference", 0x0002, 2, DataType.FLOAT_SWAP, 1.0, ""),
 
     // ==================== 单相电表 (交流功率计) ====================
     AC_METER_VOLTAGE("交流功率计","acpower", "电压", "Voltage", 0x0000, 1, DataType.INT16, 0.1, "V"),
@@ -24,10 +24,10 @@ public enum DevicePoint {
     AC_METER_ENERGY("交流功率计","acpower", "正相电能", "Positive phase electric energy", 0x001D, 2, DataType.INT32, 2.0, "W"),
 
     // ==================== SUI-201 直流功率计 ====================
-    SUI201_VOLTAGE("直流功率计","dcpower", "电压", "Voltage", 0x0BB8, 2, DataType.INT32, 0.001, "V"),
-    SUI201_CURRENT("直流功率计","dcpower", "电流", "Current", 0x0BBA, 2, DataType.INT32, 0.001, "A"),
-    SUI201_POWER("直流功率计","dcpower", "功率", "Power", 0x0BBC, 2, DataType.INT32, 0.001, "W"),
-    SUI201_ENERGY("直流功率计","dcpower", "累计电量", "Accumulated electricity", 0x0BBE, 2, DataType.INT32, 0.001, "mWh");
+    SUI201_VOLTAGE("直流功率计","sui-201", "电压", "Voltage", 0x0BB8, 2, DataType.INT32, 0.001, "V"),
+    SUI201_CURRENT("直流功率计","sui-201", "电流", "Current", 0x0BBA, 2, DataType.INT32, 0.001, "A"),
+    SUI201_POWER("直流功率计","sui-201", "功率", "Power", 0x0BBC, 2, DataType.INT32, 0.001, "W"),
+    SUI201_ENERGY("直流功率计","sui-201", "累计电量", "Accumulated electricity", 0x0BBE, 2, DataType.INT32, 0.001, "mWh");
 
     /**
      * 设备型号/名称

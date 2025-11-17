@@ -8,4 +8,5 @@ public class DeviceConfig {
     private String host;
     private int port;
     private int slaveId;
+    private String type;
 }

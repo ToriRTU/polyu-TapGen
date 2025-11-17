@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DeviceValue {
+    private String group;
     /**
      * 设备型号/名称
      */
@@ -51,6 +52,19 @@ public class DeviceValue {
         this.length = point.getLength();
         this.multiplier = point.getMultiplier();
         this.unit = point.getUnit();
+    }
+    public DeviceValue(DevicePoint point,String group, Double value, String time){
+        this.device = point.getDevice();
+        this.group = group;
+        this.deivceCode = point.getDeivceCode();
+        this.nameCN = point.getNameCN();
+        this.code = point.getCode();
+        this.address = point.getAddress();
+        this.length = point.getLength();
+        this.multiplier = point.getMultiplier();
+        this.unit = point.getUnit();
+        this.value = value;
+        this.time = time;
     }
     public DeviceValue(DevicePoint point, Double value, String time){
         this.device = point.getDevice();

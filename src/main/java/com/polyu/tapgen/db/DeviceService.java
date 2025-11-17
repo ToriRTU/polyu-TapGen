@@ -3,6 +3,7 @@ package com.polyu.tapgen.db;
 import com.google.gson.Gson;
 import com.polyu.tapgen.config.DeviceConfig;
 import com.polyu.tapgen.config.DeviceGroup;
+import com.polyu.tapgen.dto.DeviceDataDTO;
 import com.polyu.tapgen.manager.ModbusConnectionManager;
 import com.polyu.tapgen.modbus.DevicePoint;
 import com.polyu.tapgen.modbus.DeviceValue;
@@ -18,9 +19,14 @@ import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.temporal.TemporalField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 public class DeviceService {
@@ -37,17 +43,17 @@ public class DeviceService {
     /**
      * 采集数据
      */
-    public List<DeviceValue> dataCollection(String groupName, String device, DeviceConfig group) {
+    public List<DeviceValue> dataCollection(String groupName, DeviceConfig config) {
         List<DeviceValue> result = new ArrayList<>();
-        List<DevicePoint> points = DevicePoint.findByDevice(device);
+        List<DevicePoint> points = DevicePoint.findByDevice(config.getType());
         String time = DateTimeUtil.now();
-        String deviceName = group.getName();
-        int slaveId = group.getSlaveId();
+        String deviceName = config.getName();
+        int slaveId = config.getSlaveId();
         if (!connectionManager.ensureConnected(deviceName)) {
             log.warn("设备未连接，跳过读取: {}", deviceName);
             return result;
         }
-        log.info("collection group:{}, device:{}, host:{}", groupName, device, group.getHost());
+        log.info("collection group:{}, device:{}, host:{}", groupName, config.getType(), config.getHost());
         ModbusMaster master = connectionManager.getMaster(deviceName);
 
         try {
@@ -88,7 +94,7 @@ public class DeviceService {
                     BigDecimal bd = new BigDecimal(val);
                     bd = bd.setScale(3, RoundingMode.HALF_UP);
                     val = bd.doubleValue();
-                    result.add(new DeviceValue(point,val, time));
+                    result.add(new DeviceValue(point,groupName, val, time));
                 }
             }
             // 读取配置寄存器
@@ -99,5 +105,10 @@ public class DeviceService {
         }
 
         return result;
+    }
+
+    public void saveToDB(List<DeviceValue> datas){
+        List<DeviceDataDTO> list = datas.stream().map(e -> new DeviceDataDTO(e.getGroup(), e.getDevice(), e.getCode(), e.getValue(), DateTimeUtil.parse(e.getTime()).atZone(ZoneId.systemDefault()).toEpochSecond())).collect(Collectors.toList());
+        influxService.writeData(list);
     }
 }

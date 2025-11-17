@@ -43,16 +43,10 @@ public class ModbusTcpConfig {
     public Map<String, ModbusMaster> modbusMasters() {
         Map<String, ModbusMaster> masters = new HashMap<>();
         ModbusFactory modbusFactory = new ModbusFactory();
-        
         for (DeviceGroup group : groups) {
-            // K24设备
-            masters.put(group.getFlowmeter().getName(), createTcpMaster(group.getFlowmeter(), modbusFactory));
-            // BS600设备
-            masters.put(group.getPressure().getName(), createTcpMaster(group.getPressure(), modbusFactory));
-            // SUI201设备
-            masters.put(group.getDcpower().getName(), createTcpMaster(group.getDcpower(), modbusFactory));
-            // 单相电表设备
-            masters.put(group.getAcpower().getName(), createTcpMaster(group.getAcpower(), modbusFactory));
+            for(DeviceConfig config: group.getDevices()){
+                masters.put(config.getName(), createTcpMaster(config, modbusFactory));
+            }
         }
         
         return masters;
