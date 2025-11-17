@@ -14,14 +14,12 @@ public enum DevicePoint {
     K24_INSTANT_FLOW("流量计","k24", "瞬时流量", "Flow rate", 0x0017, 2, DataType.INT32, 0.01, "L"),
 
     // ==================== BS600 差压计 ====================
-    BS600_PRESSURE_DIFF("差压计","bs600", "差压", "Pressure difference", 0x0002, 2, DataType.FLOAT_SWAP, 1.0, ""),
+    BS600_PRESSURE_DIFF("差压计","bs600", "差压", "Pressure difference", 0x0002, 2, DataType.FLOAT_SWAP, 1.0, "mpa"),
 
     // ==================== 单相电表 (交流功率计) ====================
-    AC_METER_VOLTAGE("交流功率计","acpower", "电压", "Voltage", 0x0000, 1, DataType.INT16, 0.1, "V"),
-    AC_METER_CURRENT("交流功率计","acpower", "电流", "Current", 0x0001, 1, DataType.INT16, 0.1, "A"),
-    AC_METER_ACTIVE_POWER("交流功率计","acpower", "用功功率", "Input power", 0x0002, 1, DataType.INT16, 1.0, ""),
-    AC_METER_APPARENT_POWER("交流功率计","acpower", "视在功率", "Apparent power", 0x0005, 1, DataType.INT16, 2.0, "VA"),
-    AC_METER_ENERGY("交流功率计","acpower", "正相电能", "Positive phase electric energy", 0x001D, 2, DataType.INT32, 2.0, "W"),
+    AC_METER_VOLTAGE("交流功率计","acpower", "电压", "Voltage", 0x0004, 1, DataType.INT16, 0.1, "V"),
+    AC_METER_CURRENT("交流功率计","acpower", "电流", "Current", 0x0005, 1, DataType.INT16, 0.001, "A"),
+    AC_METER_ACTIVE_POWER("交流功率计","acpower", "有功功率", "Input power", 0x0000, 1, DataType.INT16, 0.01, "W"),
 
     // ==================== SUI-201 直流功率计 ====================
     SUI201_VOLTAGE("直流功率计","sui-201", "电压", "Voltage", 0x0BB8, 2, DataType.INT32, 0.001, "V"),
