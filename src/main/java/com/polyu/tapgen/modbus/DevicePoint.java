@@ -18,7 +18,7 @@ public enum DevicePoint {
 
     // ==================== 单相电表 (交流功率计) ====================
     AC_METER_VOLTAGE("交流功率计","acpower", "电压", "Voltage", 0x0004, 1, DataType.INT16, 0.1, "V"),
-    AC_METER_CURRENT("交流功率计","acpower", "电流", "Current", 0x0005, 1, DataType.INT16, 0.001, "A"),
+    AC_METER_CURRENT("交流功率计","acpower", "电流", "Current", 0x0005, 1, DataType.INT16, 0.0001, "A"),
     AC_METER_ACTIVE_POWER("交流功率计","acpower", "有功功率", "Input power", 0x0000, 1, DataType.INT16, 0.01, "W"),
 
     // ==================== SUI-201 直流功率计 ====================
