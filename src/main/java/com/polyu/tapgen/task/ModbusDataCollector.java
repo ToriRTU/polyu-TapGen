@@ -42,7 +42,6 @@ public class ModbusDataCollector {
 
     private void collectGroupData(String groupName, DeviceGroup group) {
         try {
-            log.debug("开始采集组数据: {}", groupName);
             List<CompletableFuture<List<DeviceValue>>> futures = new ArrayList<>();
             for(DeviceConfig config: group.getDevices()){
                 CompletableFuture<List<DeviceValue>> future = CompletableFuture.supplyAsync(() ->
@@ -56,7 +55,7 @@ public class ModbusDataCollector {
                     .map(CompletableFuture::join) // 等待每个future完成并获取结果
                     .flatMap(List::stream)        // 将List<List>展平为List
                     .collect(Collectors.toList());
-            log.info("{}", new Gson().toJson(allData));
+
             // 写入Excel
             csvExportService.appendDataToDailyCsv(allData, excelPath);
             // 存储到InfluxDB

@@ -53,7 +53,6 @@ public class DeviceService {
             log.warn("设备未连接，跳过读取: {}", deviceName);
             return result;
         }
-        log.info("collection group:{}, device:{}, host:{}", groupName, config.getType(), config.getHost());
         ModbusMaster master = connectionManager.getMaster(deviceName);
 
         try {
@@ -109,6 +108,7 @@ public class DeviceService {
 
     public void saveToDB(List<DeviceValue> datas){
         List<DeviceDataDTO> list = datas.stream().map(e -> new DeviceDataDTO(e.getGroup(), e.getDevice(), e.getCode(), e.getValue(), DateTimeUtil.parse(e.getTime()).atZone(ZoneId.systemDefault()).toEpochSecond())).collect(Collectors.toList());
+        log.info("{}", new Gson().toJson(list));
         influxService.writeData(list);
     }
 }
