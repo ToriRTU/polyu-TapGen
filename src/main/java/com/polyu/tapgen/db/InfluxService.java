@@ -43,7 +43,7 @@ public class InfluxService {
             .addField(Constants.Influx.GROUP, data.getGroup())
             .addField(Constants.Influx.CODE, data.getCode())
             .addField(Constants.Influx.VALUE, data.getValue())
-            .time(data.getTime(), WritePrecision.S);
+            .time(data.getTime(), WritePrecision.MS);
         try (WriteApi writeApi = influxClient.getWriteApi()) {
             writeApi.writePoint(point);
         }
@@ -57,7 +57,7 @@ public class InfluxService {
                     .addField(Constants.Influx.GROUP, e.getGroup())
                     .addField(Constants.Influx.CODE, e.getCode())
                     .addField(Constants.Influx.VALUE, e.getValue())
-                    .time(e.getTime(), WritePrecision.S);
+                    .time(e.getTime(), WritePrecision.MS);
         }).collect(Collectors.toList());
         try (WriteApi writeApi = influxClient.getWriteApi()) {
             writeApi.writePoints(points);
