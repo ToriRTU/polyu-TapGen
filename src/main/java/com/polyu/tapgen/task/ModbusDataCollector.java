@@ -49,7 +49,6 @@ public class ModbusDataCollector {
                 );
                 futures.add(future);
             }
-
             // 等待所有设备读取完成
             List<DeviceValue> allData = futures.stream()
                     .map(CompletableFuture::join) // 等待每个future完成并获取结果
@@ -57,7 +56,7 @@ public class ModbusDataCollector {
                     .collect(Collectors.toList());
 
             // 写入Excel
-            csvExportService.appendDataToDailyCsv(allData, excelPath);
+            csvExportService.appendDataToDailyCsv(allData, groupName, excelPath);
             // 存储到InfluxDB
             deviceService.saveToDB(allData);
 

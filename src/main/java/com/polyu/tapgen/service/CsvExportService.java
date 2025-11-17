@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,7 +32,6 @@ public class CsvExportService {
     private List<String> generateHeaderColumns() {
         List<String> columns = new ArrayList<>();
         columns.add("时间");
-        
         Map<String, List<DevicePoint>> pointsByDevice = Arrays.stream(DevicePoint.values())
                 .collect(Collectors.groupingBy(DevicePoint::getDeivceCode));
         
@@ -49,7 +49,7 @@ public class CsvExportService {
     /**
      * 追加一个时间点的所有设备数据到当天的CSV文件
      */
-    public boolean appendDataToDailyCsv(List<DeviceValue> dataList, String basePath) {
+    public boolean appendDataToDailyCsv(List<DeviceValue> dataList, String group, String basePath) {
         if (dataList.isEmpty()) {
             log.warn("数据列表为空，无法导出");
             return true;
@@ -58,7 +58,7 @@ public class CsvExportService {
         try {
             LocalDateTime timestamp = DateTimeUtil.parse(dataList.get(0).getTime());
             LocalDate date = timestamp.toLocalDate();
-            String filePath = getDailyFilePath(date, basePath);
+            String filePath = getDailyFilePath(date,group, basePath);
             File csvFile = new File(filePath);
             
             boolean isNewFile = !csvFile.exists();
@@ -107,7 +107,7 @@ public class CsvExportService {
     /**
      * 获取当天CSV文件路径
      */
-    private String getDailyFilePath(LocalDate date, String basePath) {
+    private String getDailyFilePath(LocalDate date,String group, String basePath) {
         String dirPath = basePath + File.separator + "data_export";
         File dir = new File(dirPath);
         if (!dir.exists()) {
@@ -117,7 +117,7 @@ public class CsvExportService {
             }
         }
         
-        String fileName = "设备数据_" + date.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv";
+        String fileName = "设备数据_" + group + "_" + date.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv";
         return dirPath + File.separator + fileName;
     }
 
@@ -143,7 +143,7 @@ public class CsvExportService {
             String column = headerColumns.get(i);
             Double value = dataMap.get(column);
             if (value != null) {
-                row.add(String.valueOf(value)); // 直接转为字符串
+                row.add(BigDecimal.valueOf(value).toPlainString()); // 直接转为字符串
             } else {
                 row.add(""); // 空值
             }
@@ -167,67 +167,6 @@ public class CsvExportService {
         return value;
     }
 
-    /**
-     * 检查当天的CSV文件是否存在
-     */
-    public boolean isTodayFileExists(String basePath) {
-        String filePath = getDailyFilePath(LocalDate.now(), basePath);
-        return new File(filePath).exists();
-    }
-
-    /**
-     * 获取当天文件的数据行数（不包括表头）
-     */
-    public int getTodayFileRowCount(String basePath) {
-        try {
-            String filePath = getDailyFilePath(LocalDate.now(), basePath);
-            File file = new File(filePath);
-            if (!file.exists()) {
-                return 0;
-            }
-            
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
-                int lines = 0;
-                while (reader.readLine() != null) {
-                    lines++;
-                }
-                return Math.max(0, lines - 1); // 减去表头行
-            }
-            
-        } catch (Exception e) {
-            log.error("获取文件行数失败", e);
-            return 0;
-        }
-    }
-
-    /**
-     * 读取CSV文件内容（用于调试）
-     */
-    public void debugCsvFile(String basePath, LocalDate date) {
-        try {
-            String filePath = getDailyFilePath(date, basePath);
-            File file = new File(filePath);
-            if (!file.exists()) {
-                log.info("文件不存在: {}", filePath);
-                return;
-            }
-            
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
-                String line;
-                int lineNum = 0;
-                log.info("=== CSV文件内容 ===");
-                while ((line = reader.readLine()) != null) {
-                    log.info("行{}: {}", lineNum, line);
-                    lineNum++;
-                }
-            }
-            
-        } catch (Exception e) {
-            log.error("读取CSV文件失败", e);
-        }
-    }
 
     /**
      * 获取表头信息
