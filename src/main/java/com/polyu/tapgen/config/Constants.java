@@ -17,6 +17,8 @@ public class Constants {
         public static final String PRESSURE = "pressure";
         public static final String AC = "acpower";
         public static final String DC = "dcpower";
+
+        public static final String Flow_rate = "Flow rate";
     }
 
 }
