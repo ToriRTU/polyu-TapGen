@@ -11,10 +11,10 @@ public enum DevicePoint {
     // ==================== K24 流量计 ====================
     K24_TOTAL_FLOW("流量计","k24", "总累计流量", "Total flow", 0x0009, 2,  DataType.INT32,0.001, "L"),
     K24_AVG_FLOW("流量计","k24", "平均流量", "Avg flow rate", 0x000F, 2,  DataType.INT32,0.01, "L/min"),
-    K24_INSTANT_FLOW("流量计","k24", "瞬时流量", "Flow rate", 0x0017, 2, DataType.INT32, 0.01, "L"),
+    K24_INSTANT_FLOW("流量计","k24", "瞬时流量", "Flow rate", 0x0017, 2, DataType.INT32, 0.01, "L/min"),
 
     // ==================== BS600 差压计 ====================
-    BS600_PRESSURE_DIFF("差压计","bs600", "差压", "Pressure difference", 0x0002, 2, DataType.FLOAT_SWAP, 1.0, "mpa"),
+    BS600_PRESSURE_DIFF("差压计","bs600", "差压", "Pressure difference", 0x0002, 2, DataType.FLOAT_SWAP, 1.0, "MPa"),
 
     // ==================== 单相电表 (交流功率计) ====================
     AC_METER_VOLTAGE("交流功率计","acpower", "电压", "Voltage", 0x0004, 1, DataType.INT16, 0.1, "V"),
