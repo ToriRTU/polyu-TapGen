@@ -38,7 +38,7 @@ public class CsvExportService {
         for (String deviceCode : pointsByDevice.keySet()) {
             List<DevicePoint> devicePoints = pointsByDevice.get(deviceCode);
             for (DevicePoint point : devicePoints) {
-                String columnName = point.getDevice() + "_" + point.getNameCN();
+                String columnName = point.getDevice() + "/" + point.getNameCN() + "（" + point.getUnit() +  "）";
                 columns.add(columnName);
             }
         }
@@ -134,7 +134,7 @@ public class CsvExportService {
         // 创建数据映射
         Map<String, Double> dataMap = new HashMap<>();
         for (DeviceValue data : dataList) {
-            String key = data.getDevice() + "_" + data.getNameCN();
+            String key = data.getDevice() + "/" + data.getNameCN() + "（" + data.getUnit() +  "）";
             dataMap.put(key, data.getValue());
         }
         

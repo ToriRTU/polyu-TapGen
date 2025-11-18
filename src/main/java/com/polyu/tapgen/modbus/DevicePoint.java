@@ -25,7 +25,7 @@ public enum DevicePoint {
     SUI201_VOLTAGE("直流功率计","sui-201", "电压", "Voltage", 0x0BB8, 2, DataType.INT32, 0.001, "V"),
     SUI201_CURRENT("直流功率计","sui-201", "电流", "Current", 0x0BBA, 2, DataType.INT32, 0.001, "A"),
     SUI201_POWER("直流功率计","sui-201", "功率", "Power", 0x0BBC, 2, DataType.INT32, 0.001, "W"),
-    SUI201_ENERGY("直流功率计","sui-201", "累计电量", "Accumulated electricity", 0x0BBE, 2, DataType.INT32, 0.001, "mWh");
+    SUI201_ENERGY("直流功率计","sui-201", "累计电量", "Accumulated electricity", 0x0BBE, 2, DataType.INT32, 0.0001, "Wh");
 
     /**
      * 设备型号/名称
