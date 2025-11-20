@@ -57,7 +57,8 @@ public class ModbusDataCollector {
                     .collect(Collectors.toList());
             //当这组数据的瞬时流量大于0时，采集路值，否则视为无效数据，不需要记录。
             Optional<DeviceValue> flowRate = allData.stream().filter(e -> e.getCode().equals(Constants.Device.Flow_rate) && e.getValue() > 0).findFirst();
-            if(flowRate.isPresent()){
+            Optional<DeviceValue> Current = allData.stream().filter(e -> e.getDeviceType().equals(Constants.Device.DEVICE_TYPE_DC) && e.getCode().equals(Constants.Device.Current) && e.getValue() != 0).findFirst();
+            if(flowRate.isPresent() || Current.isPresent()){
                 // 写入Excel
                 csvExportService.appendDataToDailyCsv(allData, groupName, excelPath);
                 // 存储到InfluxDB

@@ -33,7 +33,7 @@ public class CsvExportService {
         List<String> columns = new ArrayList<>();
         columns.add("时间");
         Map<String, List<DevicePoint>> pointsByDevice = Arrays.stream(DevicePoint.values())
-                .collect(Collectors.groupingBy(DevicePoint::getDeivceCode));
+                .collect(Collectors.groupingBy(DevicePoint::getDeviceCode));
         
         for (String deviceCode : pointsByDevice.keySet()) {
             List<DevicePoint> devicePoints = pointsByDevice.get(deviceCode);

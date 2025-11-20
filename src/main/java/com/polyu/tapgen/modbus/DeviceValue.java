@@ -13,7 +13,8 @@ public class DeviceValue {
      * 设备型号/名称
      */
     private String device;
-    private String deivceCode;
+    private String deviceCode;
+    private String deviceType;
     private String deviceName;
     /**
      * 属性中文名称
@@ -46,7 +47,8 @@ public class DeviceValue {
 
     public DeviceValue(DevicePoint point){
         this.device = point.getDevice();
-        this.deivceCode = point.getDeivceCode();
+        this.deviceCode = point.getDeviceCode();
+        this.deviceType = point.getDeviceType();
         this.nameCN = point.getNameCN();
         this.code = point.getCode();
         this.address = point.getAddress();
@@ -57,7 +59,8 @@ public class DeviceValue {
     public DeviceValue(DevicePoint point,String group,String deviceName, Double value, String time){
         this.device = point.getDevice();
         this.group = group;
-        this.deivceCode = point.getDeivceCode();
+        this.deviceCode = point.getDeviceCode();
+        this.deviceType = point.getDeviceType();
         this.deviceName = deviceName;
         this.nameCN = point.getNameCN();
         this.code = point.getCode();
@@ -70,7 +73,8 @@ public class DeviceValue {
     }
     public DeviceValue(DevicePoint point, Double value, String time){
         this.device = point.getDevice();
-        this.deivceCode = point.getDeivceCode();
+        this.deviceCode = point.getDeviceCode();
+        this.deviceType = point.getDeviceType();
         this.nameCN = point.getNameCN();
         this.code = point.getCode();
         this.address = point.getAddress();

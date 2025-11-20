@@ -19,6 +19,14 @@ public class Constants {
         public static final String DC = "dcpower";
 
         public static final String Flow_rate = "Flow rate";
+        public static final String Current = "Current";
+
+        public static final String DEVICE_TYPE_FLOW = "flow";
+        public static final String DEVICE_TYPE_PRESSURE = "pressure";
+        public static final String DEVICE_TYPE_AC = "ac";
+        public static final String DEVICE_TYPE_DC = "dc";
+
+
     }
 
 }

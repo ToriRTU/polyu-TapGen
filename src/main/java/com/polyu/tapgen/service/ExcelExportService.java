@@ -36,7 +36,7 @@ public class ExcelExportService {
         
         // 按设备分组，确保表头顺序一致
         Map<String, List<DevicePoint>> pointsByDevice = Arrays.stream(DevicePoint.values())
-                .collect(Collectors.groupingBy(DevicePoint::getDeivceCode));
+                .collect(Collectors.groupingBy(DevicePoint::getDeviceCode));
         
         // 按设备顺序添加列
         for (String deviceCode : pointsByDevice.keySet()) {
